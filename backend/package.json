@@ -5,9 +5,12 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "vercel dev",
+    "dev": "set NODE_ENV=development && node api/index.js",
+    "dev:win": "$env:NODE_ENV=\"development\"; node api/index.js",
+    "dev:vercel": "vercel dev",
     "build": "echo 'No build step required'",
-    "start": "vercel dev",
+    "start": "set NODE_ENV=production && node api/index.js",
+    "test": "set NODE_ENV=development && node test-server.js",
     "deploy": "vercel --prod"
   },
   "dependencies": {
@@ -26,7 +29,8 @@
     "@vercel/node": "^3.0.0"
   },
   "devDependencies": {
-    "vercel": "^32.0.0"
+    "vercel": "^32.0.0",
+    "cross-env": "^7.0.3"
   },
   "keywords": [
     "vercel",

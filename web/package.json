@@ -38,6 +38,6 @@
     "node": "18.16.0"
   },
   "config": {
-    "apiBaseUrl": "http://localhost:3000/api"
+    "apiBaseUrl": "http://localhost:3001/api"
   }
 }

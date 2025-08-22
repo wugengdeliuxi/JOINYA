@@ -4,21 +4,65 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import compression from 'compression'
 import rateLimit from 'express-rate-limit'
+import dotenv from 'dotenv'
+import mongoose from 'mongoose'
+import { dirname, join } from 'path'
+import { fileURLToPath } from 'url'
 
-// 导入路由
-import authRoutes from './auth.js'
-import materialsRoutes from './materials.js'
-import productsRoutes from './products.js'
-import usersRoutes from './users.js'
+// 获取当前文件所在目录
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
+// 加载环境变量 - 指定.env文件路径
+const envPath = join(__dirname, '..', '.env')
+const result = dotenv.config({ path: envPath })
+
+// 调试输出
+console.log('🔧 环境变量加载状态:')
+console.log(`   .env 文件路径: ${envPath}`)
+console.log(`   加载结果: ${result.error ? '失败 - ' + result.error.message : '成功'}`)
+console.log(`   MONGODB_URI 存在: ${process.env.MONGODB_URI ? '是' : '否'}`)
+console.log(`   NODE_ENV: ${process.env.NODE_ENV || '未设置'}`)
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+// 创建应用实例
 const app = express()
+
+// 异步初始化函数
+async function initializeApp() {
+  // 动态导入路由 - 在环境变量加载后导入
+  const { default: authRoutes } = await import('./auth.js')
+  const { default: materialsRoutes } = await import('./materials.js')
+  const { default: productsRoutes } = await import('./products.js')
+  const { default: usersRoutes } = await import('./users.js')
+
+  return { authRoutes, materialsRoutes, productsRoutes, usersRoutes }
+}
+
+// 连接数据库
+async function connectDB() {
+  try {
+    console.log(process.env.MONGODB_URI, 'MONGODB_URI')
+    if (process.env.MONGODB_URI) {
+      await mongoose.connect(process.env.MONGODB_URI)
+      console.log('✅ MongoDB 连接成功')
+    } else {
+      console.log('⚠️  警告: 未找到 MONGODB_URI 环境变量')
+    }
+  } catch (error) {
+    console.error('❌ MongoDB 连接失败:', error.message)
+    console.log('💡 请检查 .env 文件中的 MONGODB_URI 配置')
+  }
+}
+
+// 数据库连接将在 startApp() 中初始化
 
 // 中间件
 app.use(helmet())
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://your-frontend-domain.vercel.app', 'https://your-admin-domain.vercel.app']
-    : ['http://localhost:5173', 'http://localhost:5174'],
+    : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:3001'],
   credentials: true
 }))
 app.use(compression())
@@ -41,15 +85,12 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV 
+    environment: process.env.NODE_ENV,
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
   })
 })
 
-// API路由
-app.use('/api/auth', authRoutes)
-app.use('/api/materials', materialsRoutes)
-app.use('/api/products', productsRoutes)
-app.use('/api/users', usersRoutes)
+// API路由将在异步初始化中设置
 
 // 404处理
 app.use('/api/*', (req, res) => {
@@ -85,6 +126,48 @@ app.use((err, req, res, next) => {
       : err.message
   })
 })
+
+// 应用启动函数
+async function startApp() {
+  try {
+    // 连接数据库
+    await connectDB()
+    
+    // 初始化路由
+    const routes = await initializeApp()
+    
+    // 设置API路由
+    app.use('/api/auth', routes.authRoutes)
+    app.use('/api/materials', routes.materialsRoutes)
+    app.use('/api/products', routes.productsRoutes)
+    app.use('/api/users', routes.usersRoutes)
+    
+    // 本地开发服务器启动
+    if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+      const PORT = process.env.PORT || 3002
+      app.listen(PORT, () => {
+        console.log('🚀 JOINYA Backend API Server 启动成功')
+        console.log(`📍 服务地址: http://localhost:${PORT}`)
+        console.log(`🔗 健康检查: http://localhost:${PORT}/api/health`)
+        console.log(`🌍 环境: ${process.env.NODE_ENV || 'development'}`)
+        console.log('📊 API 端点:')
+        console.log('   - POST /api/auth/login')
+        console.log('   - POST /api/auth/register') 
+        console.log('   - GET  /api/materials')
+        console.log('   - GET  /api/products')
+        console.log('   - GET  /api/users')
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+      })
+    }
+    
+  } catch (error) {
+    console.error('❌ 应用启动失败:', error.message)
+    process.exit(1)
+  }
+}
+
+// 启动应用
+startApp()
 
 // Vercel Serverless Function 导出
 export default app

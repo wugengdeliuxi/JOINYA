@@ -11,7 +11,7 @@ JOINYA/
 
 ## 国际部署方案
 
-### 1. 前端部署 (Vercel - 全球CDN)
+### 1. 前端部署 (Vercel - 全球 CDN)
 
 #### 官网前端部署
 
@@ -21,7 +21,7 @@ JOINYA/
    - Build Command: `npm run build`
    - Output Directory: `dist`
    - Install Command: `npm install`
-4. 选择全球部署区域（Vercel自动选择最优节点）
+4. 选择全球部署区域（Vercel 自动选择最优节点）
 
 #### 管理后台部署
 
@@ -119,6 +119,7 @@ JOINYA/
    ```
 
 5. **配置 Vercel 全球环境变量**
+
    - 在 Vercel 控制台中找到项目
    - 进入 Settings > Environment Variables
    - 添加以下变量：
@@ -132,7 +133,7 @@ JOINYA/
    - 配置全球部署区域
    - 设置就近路由策略
 
-### 第三步：部署前端到全球CDN
+### 第三步：部署前端到全球 CDN
 
 #### 官网前端
 
@@ -143,7 +144,7 @@ JOINYA/
    const API_BASE_URL = process.env.NODE_ENV === 'production' ? 'https://your-backend-domain.vercel.app/api' : 'http://localhost:3000/api'
    ```
 
-2. **部署到 Vercel 全球CDN**
+2. **部署到 Vercel 全球 CDN**
    ```bash
    cd web
    vercel --prod
@@ -158,18 +159,19 @@ JOINYA/
    const API_BASE_URL = process.env.NODE_ENV === 'production' ? 'https://your-backend-domain.vercel.app/api' : 'http://localhost:3000/api'
    ```
 
-2. **部署到 Vercel 全球CDN**
+2. **部署到 Vercel 全球 CDN**
+
    ```bash
    cd admin-panel
    vercel --prod
    ```
 
-3. **配置全球CDN优化**
-   - 启用 Vercel 的全球CDN加速
+3. **配置全球 CDN 优化**
+   - 启用 Vercel 的全球 CDN 加速
    - 配置静态资源缓存策略
    - 启用图片和视频优化
 
-### 第四步：配置全球域名和SSL
+### 第四步：配置全球域名和 SSL
 
 1. **全球自定义域名**
 
@@ -178,18 +180,19 @@ JOINYA/
      - 官网：`www.joinya.com` 或 `joinya.com`
      - 管理后台：`admin.joinya.com`
      - API：`api.joinya.com`
-   - 配置DNS解析到Vercel的全球CDN节点
+   - 配置 DNS 解析到 Vercel 的全球 CDN 节点
 
-2. **全球SSL证书**
-   - Vercel 自动提供全球SSL证书
-   - 确保所有域名都使用HTTPS
-   - 配置HSTS安全头
-   - 启用HTTP/2和HTTP/3支持
+2. **全球 SSL 证书**
 
-3. **全球DNS优化**
-   - 使用Cloudflare或其他全球DNS服务
+   - Vercel 自动提供全球 SSL 证书
+   - 确保所有域名都使用 HTTPS
+   - 配置 HSTS 安全头
+   - 启用 HTTP/2 和 HTTP/3 支持
+
+3. **全球 DNS 优化**
+   - 使用 Cloudflare 或其他全球 DNS 服务
    - 配置就近解析
-   - 启用DNS缓存优化
+   - 启用 DNS 缓存优化
 
 ### 第五步：全球文件存储配置
 
@@ -223,7 +226,7 @@ export const uploadToS3 = async (file, key) => {
 }
 ```
 
-#### 方案二：Cloudflare R2 (全球CDN)
+#### 方案二：Cloudflare R2 (全球 CDN)
 
 ```javascript
 // backend/lib/storage.js
@@ -234,8 +237,8 @@ const s3Client = new S3Client({
   endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
   credentials: {
     accessKeyId: process.env.R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-  },
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY
+  }
 })
 
 export const uploadToR2 = async (file, key) => {
@@ -243,7 +246,7 @@ export const uploadToR2 = async (file, key) => {
     Bucket: process.env.R2_BUCKET_NAME,
     Key: key,
     Body: file.buffer,
-    ContentType: file.mimetype,
+    ContentType: file.mimetype
   })
 
   await s3Client.send(command)
@@ -251,7 +254,7 @@ export const uploadToR2 = async (file, key) => {
 }
 ```
 
-#### 方案三：Vercel Blob Storage (内置全球CDN)
+#### 方案三：Vercel Blob Storage (内置全球 CDN)
 
 ```javascript
 // backend/lib/storage.js
@@ -260,7 +263,7 @@ import { put } from '@vercel/blob'
 export const uploadToVercelBlob = async (file, filename) => {
   const { url } = await put(filename, file.buffer, {
     access: 'public',
-    contentType: file.mimetype,
+    contentType: file.mimetype
   })
   return url
 }
@@ -273,16 +276,17 @@ export const uploadToVercelBlob = async (file, filename) => {
    - 在 Vercel 控制台启用 Analytics
    - 监控全球各地区网站性能
    - 分析用户地理分布和访问模式
-   - 监控Core Web Vitals指标
+   - 监控 Core Web Vitals 指标
 
 2. **全球错误监控**
 
    - 集成 Sentry 进行全球错误监控
    - 配置多地区告警通知
-   - 监控API响应时间和错误率
+   - 监控 API 响应时间和错误率
    - 设置性能预算告警
 
 3. **全球日志管理**
+
    - 使用 Vercel 的全球日志功能
    - 集成 Datadog 或 New Relic 进行全球监控
    - 配置日志聚合和分析
@@ -291,7 +295,7 @@ export const uploadToVercelBlob = async (file, filename) => {
 4. **全球可用性监控**
    - 使用 UptimeRobot 或 Pingdom 监控全球可用性
    - 配置多地区健康检查
-   - 监控CDN性能和缓存命中率
+   - 监控 CDN 性能和缓存命中率
 
 ## 全球环境变量配置
 
@@ -352,7 +356,7 @@ NODE_ENV=production
    ```javascript
    // 路由懒加载
    const Home = () => import('@/views/Home.vue')
-   
+
    // 按地区动态导入
    const loadLocaleData = (locale) => import(`@/locales/${locale}.json`)
    ```
@@ -361,57 +365,54 @@ NODE_ENV=production
 
    - 使用 WebP/AVIF 格式
    - 实现响应式图片
-   - 使用全球CDN
+   - 使用全球 CDN
    - 启用图片压缩和优化
 
 3. **全球缓存策略**
-   - 静态资源长期缓存（1年）
-   - API响应就近缓存
-   - 启用Service Worker缓存
-   - 配置Cache-Control头
 
-4. **全球CDN优化**
-   - 启用Vercel的全球CDN
+   - 静态资源长期缓存（1 年）
+   - API 响应就近缓存
+   - 启用 Service Worker 缓存
+   - 配置 Cache-Control 头
+
+4. **全球 CDN 优化**
+   - 启用 Vercel 的全球 CDN
    - 配置就近访问
-   - 启用HTTP/2和HTTP/3
-   - 启用Brotli压缩
+   - 启用 HTTP/2 和 HTTP/3
+   - 启用 Brotli 压缩
 
 ### 后端优化
 
 1. **全球数据库优化**
 
-   - 使用MongoDB Atlas全球集群
+   - 使用 MongoDB Atlas 全球集群
    - 配置就近读取
    - 创建合适的索引
    - 使用连接池
    - 实现查询缓存
 
-2. **全球API优化**
+2. **全球 API 优化**
+
    - 实现分页和流式响应
-   - 启用gzip/Brotli压缩
+   - 启用 gzip/Brotli 压缩
    - 配置全球速率限制
-   - 启用API缓存
-   - 使用Edge Functions
+   - 启用 API 缓存
+   - 使用 Edge Functions
 
 3. **全球边缘计算**
-   - 启用Vercel Edge Functions
+   - 启用 Vercel Edge Functions
    - 配置就近计算
    - 优化冷启动时间
    - 使用全球缓存
 
 ## 全球安全配置
 
-1. **全球CORS配置**
+1. **全球 CORS 配置**
 
    ```javascript
    app.use(
      cors({
-       origin: [
-         'https://www.joinya.com',
-         'https://joinya.com',
-         'https://admin.joinya.com',
-         'https://api.joinya.com'
-       ],
+       origin: ['https://www.joinya.com', 'https://joinya.com', 'https://admin.joinya.com', 'https://api.joinya.com'],
        credentials: true,
        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
        allowedHeaders: ['Content-Type', 'Authorization']
@@ -427,11 +428,11 @@ NODE_ENV=production
        contentSecurityPolicy: {
          directives: {
            defaultSrc: ["'self'"],
-           styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-           scriptSrc: ["'self'", "https://vercel.live"],
-           imgSrc: ["'self'", "data:", "https:", "https://*.cloudfront.net"],
-           fontSrc: ["'self'", "https://fonts.gstatic.com"],
-           connectSrc: ["'self'", "https://api.joinya.com"]
+           styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+           scriptSrc: ["'self'", 'https://vercel.live'],
+           imgSrc: ["'self'", 'data:', 'https:', 'https://*.cloudfront.net'],
+           fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+           connectSrc: ["'self'", 'https://api.joinya.com']
          }
        },
        hsts: {
@@ -444,16 +445,17 @@ NODE_ENV=production
    ```
 
 3. **全球输入验证**
+
    - 所有用户输入都进行验证
-   - 防止SQL注入和XSS攻击
-   - 启用CSRF保护
+   - 防止 SQL 注入和 XSS 攻击
+   - 启用 CSRF 保护
    - 配置全球速率限制
 
-4. **全球SSL/TLS配置**
-   - 强制HTTPS重定向
-   - 配置HSTS头
-   - 启用HTTP/2和HTTP/3
-   - 配置安全的TLS版本
+4. **全球 SSL/TLS 配置**
+   - 强制 HTTPS 重定向
+   - 配置 HSTS 头
+   - 启用 HTTP/2 和 HTTP/3
+   - 配置安全的 TLS 版本
 
 ## 备份策略
 
@@ -528,7 +530,7 @@ NODE_ENV=production
 
 ### Vercel 费用
 
-- Hobby Plan: $0/月 (适合小项目，全球CDN)
+- Hobby Plan: $0/月 (适合小项目，全球 CDN)
 - Pro Plan: $20/月 (适合中型项目，全球边缘计算)
 - Enterprise Plan: 联系销售 (企业级全球部署)
 
@@ -541,50 +543,55 @@ NODE_ENV=production
 
 ### 全球云存储费用
 
-- **AWS S3 + CloudFront**: 存储 + 全球CDN流量费用
-- **Cloudflare R2**: 存储费用，CDN免费
-- **Vercel Blob**: 存储 + 全球CDN，按使用量计费
+- **AWS S3 + CloudFront**: 存储 + 全球 CDN 流量费用
+- **Cloudflare R2**: 存储费用，CDN 免费
+- **Vercel Blob**: 存储 + 全球 CDN，按使用量计费
 
-### 全球DNS费用
+### 全球 DNS 费用
 
-- **Cloudflare**: 免费计划支持全球DNS
+- **Cloudflare**: 免费计划支持全球 DNS
 - **Route 53**: 按查询次数计费
 
 ### 全球监控费用
 
 - **Sentry**: 按事件数量计费
 - **Datadog**: 按主机和功能计费
-- **UptimeRobot**: 免费计划支持50个监控点
+- **UptimeRobot**: 免费计划支持 50 个监控点
 
 ## 全球部署优势
 
 这个全球部署方案提供了：
 
 ### 🌍 全球覆盖
-- **200+ 全球CDN节点**
+
+- **200+ 全球 CDN 节点**
 - **自动就近访问**
 - **多地区数据库部署**
 - **全球边缘计算**
 
 ### ⚡ 极致性能
+
 - **毫秒级响应时间**
 - **HTTP/3 支持**
 - **Brotli 压缩**
 - **智能缓存策略**
 
 ### 🔒 企业级安全
-- **全球SSL证书**
+
+- **全球 SSL 证书**
 - **DDoS 防护**
 - **WAF 防火墙**
 - **合规性支持**
 
 ### 📊 全面监控
+
 - **全球性能监控**
 - **实时错误追踪**
 - **用户行为分析**
 - **可用性监控**
 
 ### 💰 成本优化
+
 - **按使用量付费**
 - **自动扩展**
 - **资源优化**
@@ -592,8 +599,8 @@ NODE_ENV=production
 
 ## 部署建议
 
-1. **开发阶段**: 使用Vercel Hobby Plan + MongoDB Atlas Free Tier
-2. **测试阶段**: 升级到Pro Plan进行全球测试
+1. **开发阶段**: 使用 Vercel Hobby Plan + MongoDB Atlas Free Tier
+2. **测试阶段**: 升级到 Pro Plan 进行全球测试
 3. **生产阶段**: 根据用户分布选择合适的多地区部署方案
 4. **扩展阶段**: 考虑企业级方案以获得更好的支持和性能
 
