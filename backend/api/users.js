@@ -1,5 +1,5 @@
 import express from 'express'
-import connectDB from '../lib/db.js'
+// connectDB 已在主应用中处理
 
 const router = express.Router()
 

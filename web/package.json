@@ -38,6 +38,6 @@
     "node": "18.16.0"
   },
   "config": {
-    "apiBaseUrl": "http://localhost:3001/api"
+    "apiBaseUrl": "https://joinya-api.vercel.app/api"
   }
 }

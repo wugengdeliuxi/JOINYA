@@ -1,7 +1,7 @@
 import express from 'express'
 import multer from 'multer'
 import { body, query, validationResult } from 'express-validator'
-import connectDB from '../lib/db.js'
+// connectDB 已在主应用中处理
 import Material from '../models/Material.js'
 import { auth, requireEditor } from '../middleware/auth.js'
 
@@ -47,8 +47,6 @@ router.get('/', [
         errors: errors.array()
       })
     }
-
-    await connectDB()
 
     const page = parseInt(req.query.page) || 1
     const limit = parseInt(req.query.limit) || 12
@@ -125,8 +123,6 @@ router.post('/upload', auth, requireEditor, upload.single('file'), [
       })
     }
 
-    await connectDB()
-
     const { name, category, description, tags } = req.body
     const file = req.file
 
@@ -180,8 +176,6 @@ router.post('/upload', auth, requireEditor, upload.single('file'), [
 // 获取单个素材
 router.get('/:id', async (req, res) => {
   try {
-    await connectDB()
-
     const material = await Material.findById(req.params.id)
       .populate('uploadedBy', 'username')
       .lean()
@@ -212,8 +206,6 @@ router.get('/:id', async (req, res) => {
 // 删除素材
 router.delete('/:id', auth, requireEditor, async (req, res) => {
   try {
-    await connectDB()
-
     const material = await Material.findById(req.params.id)
 
     if (!material) {
@@ -261,8 +253,6 @@ router.put('/:id', auth, requireEditor, [
         errors: errors.array()
       })
     }
-
-    await connectDB()
 
     const material = await Material.findById(req.params.id)
 

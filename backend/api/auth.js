@@ -1,7 +1,6 @@
 import express from 'express'
 import jwt from 'jsonwebtoken'
 import { body, validationResult } from 'express-validator'
-import connectDB from '../lib/db.js'
 import User from '../models/User.js'
 import { auth } from '../middleware/auth.js'
 
@@ -22,8 +21,6 @@ router.post('/login', [
         errors: errors.array()
       })
     }
-
-    await connectDB()
 
     const { username, password } = req.body
 

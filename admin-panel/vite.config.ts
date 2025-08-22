@@ -27,7 +27,9 @@ export default defineConfig({
     port: 5174,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: process.env.NODE_ENV === 'production' 
+          ? 'https://joinya-api.vercel.app'
+          : 'http://localhost:3002',
         changeOrigin: true
       }
     }
