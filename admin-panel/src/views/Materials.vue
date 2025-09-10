@@ -187,7 +187,7 @@ const fetchMaterials = async () => {
       ...searchForm
     }
 
-    const response = (await apiClient.get<Material[]>('/materials', params)) as PaginatedResponse<Material>
+    const response = await apiClient.getPaginated<Material>('/materials', params)
 
     if (response.success) {
       materials.value = response.data || []

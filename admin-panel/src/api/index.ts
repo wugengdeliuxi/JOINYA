@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { ApiResponse } from '@/types'
+import type { ApiResponse, PaginatedResponse } from '@/types'
 
 // 创建axios实例
 const api = axios.create({
@@ -47,6 +47,10 @@ api.interceptors.response.use(
 // 通用API方法
 export const apiClient = {
   get: <T>(url: string, params?: any): Promise<ApiResponse<T>> => {
+    return api.get(url, { params })
+  },
+  
+  getPaginated: <T>(url: string, params?: any): Promise<PaginatedResponse<T>> => {
     return api.get(url, { params })
   },
   
