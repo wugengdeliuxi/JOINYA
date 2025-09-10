@@ -33,8 +33,8 @@ const app = express()
 // 连接数据库
 async function connectDB() {
   try {
-    if (process.env.MONGODB_URI) {
-      await mongoose.connect(process.env.MONGODB_URI)
+    if (1) {
+      await mongoose.connect('mongodb+srv://joinya-admin:3AWc8DFZf7Papo5u@joinya-cluster.qpogy8c.mongodb.net/?retryWrites=true&w=majority&appName=joinya-cluster')
       console.log('✅ MongoDB 连接成功')
     } else {
       console.log('⚠️  警告: 未找到 MONGODB_URI 环境变量')
@@ -60,16 +60,34 @@ async function initializeApp() {
 
 // 中间件
 app.use(helmet())
-app.use(cors({
+
+// 全局CORS配置
+const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://your-frontend-domain.vercel.app', 'https://your-admin-domain.vercel.app']
-    : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:3001'],
-  credentials: true
-}))
+    : true, // 开发环境允许所有来源
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
+}
+
+app.use(cors(corsOptions))
 app.use(compression())
 app.use(morgan('combined'))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
+
+// 静态文件服务 - 提供上传文件的访问
+const uploadsPath = join(__dirname, '..', 'uploads')
+console.log('📁 静态文件服务路径:', uploadsPath)
+console.log('📁 __dirname:', __dirname)
+
+// 静态文件服务 - 添加跨域资源策略支持
+app.use('/uploads', (req, res, next) => {
+  // 设置跨域资源策略为 cross-origin，允许跨域访问
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
+  next()
+}, express.static(uploadsPath))
 
 // 速率限制
 const limiter = rateLimit({
@@ -102,14 +120,6 @@ app.get('/', (req, res) => {
 })
 
 // API路由将在异步初始化中设置
-
-// 404处理
-app.use('/api/*', (req, res) => {
-  res.status(404).json({ 
-    success: false, 
-    message: 'API端点不存在' 
-  })
-})
 
 // 错误处理中间件
 app.use((err, req, res, next) => {
@@ -152,6 +162,20 @@ async function startApp() {
     app.use('/api/materials', routes.materialsRoutes)
     app.use('/api/products', routes.productsRoutes)
     app.use('/api/users', routes.usersRoutes)
+    
+    console.log('✅ API路由已设置:')
+    console.log('   - /api/auth')
+    console.log('   - /api/materials') 
+    console.log('   - /api/products')
+    console.log('   - /api/users')
+    
+    // 404处理 - 在所有路由之后
+    app.use('/api/*', (req, res) => {
+      res.status(404).json({ 
+        success: false, 
+        message: 'API端点不存在' 
+      })
+    })
     
     // 本地开发服务器启动
     if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {

@@ -7,17 +7,12 @@
         上传素材
       </el-button>
     </div>
-    
+
     <!-- 搜索和筛选 -->
     <div class="search-bar">
       <el-row :gutter="20">
         <el-col :span="6">
-          <el-input
-            v-model="searchForm.keyword"
-            placeholder="搜索素材名称"
-            clearable
-            @keyup.enter="handleSearch"
-          >
+          <el-input v-model="searchForm.keyword" placeholder="搜索素材名称" clearable @keyup.enter="handleSearch">
             <template #prefix>
               <el-icon><Search /></el-icon>
             </template>
@@ -44,39 +39,21 @@
         </el-col>
       </el-row>
     </div>
-    
+
     <!-- 素材列表 -->
     <div class="materials-grid">
       <el-row :gutter="20">
-        <el-col
-          v-for="material in materials"
-          :key="material.id"
-          :xs="24"
-          :sm="12"
-          :md="8"
-          :lg="6"
-          :xl="4"
-        >
+        <el-col v-for="material in materials" :key="material.id" :xs="24" :sm="12" :md="8" :lg="6" :xl="4">
           <div class="material-card">
             <div class="material-preview">
-              <img
-                v-if="material.type === 'image'"
-                :src="material.url"
-                :alt="material.name"
-                @click="previewMaterial(material)"
-              />
-              <video
-                v-else-if="material.type === 'video'"
-                :src="material.url"
-                controls
-                @click="previewMaterial(material)"
-              />
+              <img v-if="material.type === 'image'" :src="material.url" :alt="material.name" @click="previewMaterial(material)" />
+              <video v-else-if="material.type === 'video'" :src="material.url" controls @click="previewMaterial(material)" />
               <div v-else class="document-preview">
                 <el-icon size="48"><Document /></el-icon>
                 <span>{{ material.name }}</span>
               </div>
             </div>
-            
+
             <div class="material-info">
               <h4>{{ material.name }}</h4>
               <p class="material-meta">
@@ -86,7 +63,7 @@
                 <span class="size">{{ formatFileSize(material.size) }}</span>
               </p>
               <p class="material-description">{{ material.description || '暂无描述' }}</p>
-              
+
               <div class="material-actions">
                 <el-button size="small" @click="copyUrl(material.url)">
                   <el-icon><Link /></el-icon>
@@ -102,7 +79,7 @@
         </el-col>
       </el-row>
     </div>
-    
+
     <!-- 分页 -->
     <div class="pagination-wrapper">
       <el-pagination
@@ -115,24 +92,14 @@
         @current-change="handleCurrentChange"
       />
     </div>
-    
+
     <!-- 上传对话框 -->
-    <el-dialog
-      v-model="showUploadDialog"
-      title="上传素材"
-      width="500px"
-      @close="resetUploadForm"
-    >
-      <el-form
-        ref="uploadFormRef"
-        :model="uploadForm"
-        :rules="uploadRules"
-        label-width="80px"
-      >
+    <el-dialog v-model="showUploadDialog" title="上传素材" width="500px" @close="resetUploadForm">
+      <el-form ref="uploadFormRef" :model="uploadForm" :rules="uploadRules" label-width="80px">
         <el-form-item label="素材名称" prop="name">
           <el-input v-model="uploadForm.name" placeholder="请输入素材名称" />
         </el-form-item>
-        
+
         <el-form-item label="分类" prop="category">
           <el-select v-model="uploadForm.category" placeholder="选择分类">
             <el-option label="产品图" value="product" />
@@ -141,47 +108,29 @@
             <el-option label="其他" value="other" />
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="描述">
-          <el-input
-            v-model="uploadForm.description"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入素材描述"
-          />
+          <el-input v-model="uploadForm.description" type="textarea" :rows="3" placeholder="请输入素材描述" />
         </el-form-item>
-        
+
         <el-form-item label="标签">
-          <el-input
-            v-model="uploadForm.tags"
-            placeholder="请输入标签，用逗号分隔"
-          />
+          <el-input v-model="uploadForm.tags" placeholder="请输入标签，用逗号分隔" />
         </el-form-item>
-        
+
         <el-form-item label="文件" prop="file">
-          <el-upload
-            ref="uploadRef"
-            :auto-upload="false"
-            :on-change="handleFileChange"
-            :limit="1"
-            accept="image/*,video/*,.pdf,.doc,.docx"
-          >
+          <el-upload ref="uploadRef" :auto-upload="false" :on-change="handleFileChange" :limit="1" accept="image/*,video/*,.pdf,.doc,.docx">
             <el-button type="primary">选择文件</el-button>
             <template #tip>
-              <div class="el-upload__tip">
-                支持图片、视频、文档格式，文件大小不超过50MB
-              </div>
+              <div class="el-upload__tip">支持图片、视频、文档格式，文件大小不超过50MB</div>
             </template>
           </el-upload>
         </el-form-item>
       </el-form>
-      
+
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="showUploadDialog = false">取消</el-button>
-          <el-button type="primary" :loading="uploading" @click="handleUpload">
-            上传
-          </el-button>
+          <el-button type="primary" :loading="uploading" @click="handleUpload"> 上传 </el-button>
         </span>
       </template>
     </el-dialog>
@@ -237,13 +186,15 @@ const fetchMaterials = async () => {
       limit: pagination.limit,
       ...searchForm
     }
-    
+
     const response = await apiClient.get<Material[]>('/materials', params)
-    
+
     if (response.success) {
       materials.value = response.data || []
-      pagination.total = response.pagination?.total || 0
-      pagination.totalPages = response.pagination?.totalPages || 0
+      // 使用类型断言来处理分页信息
+      const paginatedResponse = response as any
+      pagination.total = paginatedResponse.pagination?.total || 0
+      pagination.totalPages = paginatedResponse.pagination?.totalPages || 0
     }
   } catch (error: any) {
     ElMessage.error('获取素材列表失败')
@@ -285,20 +236,31 @@ const handleFileChange = (file: UploadFile) => {
 
 const handleUpload = async () => {
   if (!uploadFormRef.value || !uploadForm.file) return
-  
+
   try {
     await uploadFormRef.value.validate()
     uploading.value = true
-    
+
+    // 调试信息
+    console.log('上传文件信息:', uploadForm.file)
+    console.log('文件类型:', uploadForm.file?.type)
+    console.log('文件大小:', uploadForm.file?.size)
+
     const formData = new FormData()
     formData.append('file', uploadForm.file)
     formData.append('name', uploadForm.name)
     formData.append('category', uploadForm.category)
     formData.append('description', uploadForm.description)
     formData.append('tags', uploadForm.tags)
-    
+
+    // 调试FormData
+    console.log('FormData内容:')
+    for (let [key, value] of formData.entries()) {
+      console.log(`  ${key}:`, value)
+    }
+
     const response = await apiClient.post<Material>('/materials/upload', formData)
-    
+
     if (response.success) {
       ElMessage.success('上传成功')
       showUploadDialog.value = false
@@ -321,9 +283,9 @@ const deleteMaterial = async (id: string) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    
+
     const response = await apiClient.delete(`/materials/${id}`)
-    
+
     if (response.success) {
       ElMessage.success('删除成功')
       fetchMaterials()
@@ -430,7 +392,9 @@ onMounted(() => {
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .material-card:hover {

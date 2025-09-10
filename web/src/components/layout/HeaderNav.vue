@@ -33,7 +33,7 @@
         <div class="nav-content">
           <!-- Logo -->
           <router-link to="/" class="logo">
-            <img src="@/assets/images/logo.jpg" alt="JOINYA" class="logo-image" />
+            <img :src="logoUrl || '@/assets/images/logo.jpg'" alt="JOINYA" class="logo-image" @error="handleLogoError" />
           </router-link>
 
           <!-- 主菜单 -->
@@ -89,10 +89,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { Search, Menu, Operation, Close, User } from '@element-plus/icons-vue'
+import { materialsApi } from '@/services/materials'
 
 const { locale, t } = useI18n()
 const router = useRouter()
@@ -100,6 +101,7 @@ const router = useRouter()
 const mobileMenuOpen = ref(false)
 const showSearch = ref(false)
 const searchQuery = ref('')
+const logoUrl = ref('')
 
 const currentLanguage = computed(() => {
   return locale.value === 'zh-cn' ? '中文' : 'English'
@@ -118,9 +120,32 @@ const handleSearch = () => {
   }
 }
 
+// 获取动态logo
+const fetchLogo = async () => {
+  try {
+    const response = await materialsApi.getLogos()
+    if (response.success && response.data && response.data.length > 0) {
+      // 使用第一个logo作为默认logo
+      logoUrl.value = response.data[0].url
+    }
+  } catch (error) {
+    console.warn('获取logo失败，使用默认logo:', error)
+  }
+}
+
+// Logo加载错误处理
+const handleLogoError = () => {
+  logoUrl.value = ''
+}
+
 // 监听路由变化关闭移动端菜单
 router.afterEach(() => {
   mobileMenuOpen.value = false
+})
+
+// 组件挂载时获取logo
+onMounted(() => {
+  fetchLogo()
 })
 </script>
 

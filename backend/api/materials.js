@@ -1,42 +1,24 @@
 import express from 'express'
-import multer from 'multer'
 import { body, query, validationResult } from 'express-validator'
-// connectDB 已在主应用中处理
 import Material from '../models/Material.js'
 import { auth, requireEditor } from '../middleware/auth.js'
+import { upload, handleUploadError, generateFileUrl } from '../middleware/upload.js'
 
 const router = express.Router()
-
-// 配置multer用于文件上传
-const storage = multer.memoryStorage()
-const upload = multer({
-  storage,
-  limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB
-  },
-  fileFilter: (req, file, cb) => {
-    // 允许的文件类型
-    const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      'video/mp4', 'video/webm', 'video/ogg',
-      'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ]
-    
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true)
-    } else {
-      cb(new Error('不支持的文件类型'), false)
-    }
-  }
-})
 
 // 获取素材列表
 router.get('/', [
   query('page').optional().isInt({ min: 1 }).withMessage('页码必须是正整数'),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('每页数量必须在1-100之间'),
   query('keyword').optional().trim(),
-  query('type').optional().isIn(['image', 'video', 'document']).withMessage('无效的素材类型'),
-  query('category').optional().isIn(['product', 'background', 'logo', 'other']).withMessage('无效的分类')
+  query('type').optional().custom((value) => {
+    if (value === '' || value === undefined) return true
+    return ['image', 'video', 'document'].includes(value)
+  }).withMessage('无效的素材类型'),
+  query('category').optional().custom((value) => {
+    if (value === '' || value === undefined) return true
+    return ['product', 'background', 'logo', 'other'].includes(value)
+  }).withMessage('无效的分类')
 ], async (req, res) => {
   try {
     const errors = validationResult(req)
@@ -55,15 +37,15 @@ router.get('/', [
     // 构建查询条件
     const query = { isPublic: true }
     
-    if (req.query.keyword) {
+    if (req.query.keyword && req.query.keyword.trim()) {
       query.$text = { $search: req.query.keyword }
     }
     
-    if (req.query.type) {
+    if (req.query.type && req.query.type.trim()) {
       query.type = req.query.type
     }
     
-    if (req.query.category) {
+    if (req.query.category && req.query.category.trim()) {
       query.category = req.query.category
     }
 
@@ -107,6 +89,12 @@ router.post('/upload', auth, requireEditor, upload.single('file'), [
   body('tags').optional().isString().withMessage('标签格式错误')
 ], async (req, res) => {
   try {
+    // 调试信息
+    console.log('上传请求信息:')
+    console.log('  req.file:', req.file)
+    console.log('  req.body:', req.body)
+    console.log('  req.headers:', req.headers['content-type'])
+
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -117,6 +105,7 @@ router.post('/upload', auth, requireEditor, upload.single('file'), [
     }
 
     if (!req.file) {
+      console.log('❌ 没有检测到文件')
       return res.status(400).json({
         success: false,
         message: '请选择要上传的文件'
@@ -137,9 +126,14 @@ router.post('/upload', auth, requireEditor, upload.single('file'), [
     // 处理标签
     const tagArray = tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : []
 
-    // 这里应该实现文件上传到云存储的逻辑
-    // 为了演示，我们使用一个模拟的URL
-    const fileUrl = `https://your-storage-domain.com/uploads/${Date.now()}-${file.originalname}`
+    // 生成文件URL
+    console.log('文件信息:')
+    console.log('  file.path:', file.path)
+    console.log('  file.filename:', file.filename)
+    console.log('  file.originalname:', file.originalname)
+    
+    const fileUrl = generateFileUrl(req, file.path)
+    console.log('  生成的URL:', fileUrl)
 
     // 创建素材记录
     const material = new Material({
@@ -296,5 +290,8 @@ router.put('/:id', auth, requireEditor, [
     })
   }
 })
+
+// 添加文件上传错误处理
+router.use(handleUploadError)
 
 export default router

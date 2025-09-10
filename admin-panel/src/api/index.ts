@@ -3,7 +3,9 @@ import type { ApiResponse } from '@/types'
 
 // 创建axios实例
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: process.env.NODE_ENV === 'production' 
+    ? 'https://joinya-api.vercel.app/api'
+    : 'http://localhost:3002/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -27,14 +29,18 @@ api.interceptors.request.use(
 // 响应拦截器
 api.interceptors.response.use(
   (response) => {
-    return response.data
+    // 对于文件上传，需要检查响应状态
+    if (response.status >= 200 && response.status < 300) {
+      return response.data
+    }
+    return Promise.reject(new Error('请求失败'))
   },
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('admin_token')
       window.location.href = '/login'
     }
-    return Promise.reject(error)
+    return Promise.reject(error.response?.data || error)
   }
 )
 
@@ -45,7 +51,13 @@ export const apiClient = {
   },
   
   post: <T>(url: string, data?: any): Promise<ApiResponse<T>> => {
-    return api.post(url, data)
+    // 如果是FormData，不设置Content-Type，让axios自动处理
+    const config = data instanceof FormData ? {
+      headers: {
+        'Content-Type': undefined
+      }
+    } : {}
+    return api.post(url, data, config)
   },
   
   put: <T>(url: string, data?: any): Promise<ApiResponse<T>> => {

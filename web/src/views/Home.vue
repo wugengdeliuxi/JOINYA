@@ -3,8 +3,8 @@
     <!-- Hero区域 -->
     <section class="hero-section">
       <div class="hero-background">
-        <!-- 这里可以放背景图片或视频 -->
-        <div class="hero-image"></div>
+        <!-- 动态背景图片 -->
+        <BackgroundManager />
       </div>
       <div class="container">
         <div class="hero-content">
@@ -25,56 +25,56 @@
       <!-- 滚动特色文字 - 悬浮在Hero底部 -->
       <section class="features-scrolling">
         <div class="scrolling-features-content">
-        <span class="scrolling-feature-item">
-          <el-icon><Van /></el-icon>
-          {{ $t('features.directValue') }}
-        </span>
-        <span class="scrolling-feature-item">
-          <el-icon><Star /></el-icon>
-          {{ $t('features.championRaced') }}
-        </span>
-        <span class="scrolling-feature-item">
-          <el-icon><Tools /></el-icon>
-          {{ $t('features.quickBuild') }}
-        </span>
-        <span class="scrolling-feature-item">
-          <el-icon><Location /></el-icon>
-          {{ $t('features.serviceLocations') }}
-        </span>
-        <span class="scrolling-feature-item">
-          <el-icon><Trophy /></el-icon>
-          {{ $t('features.germanEngineering') }}
-        </span>
-        <span class="scrolling-feature-item">
-          <el-icon><CreditCard /></el-icon>
-          {{ $t('features.flexiblePayment') }}
-        </span>
-        <!-- 重复一遍确保无缝循环 -->
-        <span class="scrolling-feature-item">
-          <el-icon><Van /></el-icon>
-          {{ $t('features.directValue') }}
-        </span>
-        <span class="scrolling-feature-item">
-          <el-icon><Star /></el-icon>
-          {{ $t('features.championRaced') }}
-        </span>
-        <span class="scrolling-feature-item">
-          <el-icon><Tools /></el-icon>
-          {{ $t('features.quickBuild') }}
-        </span>
-        <span class="scrolling-feature-item">
-          <el-icon><Location /></el-icon>
-          {{ $t('features.serviceLocations') }}
-        </span>
-        <span class="scrolling-feature-item">
-          <el-icon><Trophy /></el-icon>
-          {{ $t('features.germanEngineering') }}
-        </span>
-        <span class="scrolling-feature-item">
-          <el-icon><CreditCard /></el-icon>
-          {{ $t('features.flexiblePayment') }}
-        </span>
-      </div>
+          <span class="scrolling-feature-item">
+            <el-icon><Van /></el-icon>
+            {{ $t('features.directValue') }}
+          </span>
+          <span class="scrolling-feature-item">
+            <el-icon><Star /></el-icon>
+            {{ $t('features.championRaced') }}
+          </span>
+          <span class="scrolling-feature-item">
+            <el-icon><Tools /></el-icon>
+            {{ $t('features.quickBuild') }}
+          </span>
+          <span class="scrolling-feature-item">
+            <el-icon><Location /></el-icon>
+            {{ $t('features.serviceLocations') }}
+          </span>
+          <span class="scrolling-feature-item">
+            <el-icon><Trophy /></el-icon>
+            {{ $t('features.germanEngineering') }}
+          </span>
+          <span class="scrolling-feature-item">
+            <el-icon><CreditCard /></el-icon>
+            {{ $t('features.flexiblePayment') }}
+          </span>
+          <!-- 重复一遍确保无缝循环 -->
+          <span class="scrolling-feature-item">
+            <el-icon><Van /></el-icon>
+            {{ $t('features.directValue') }}
+          </span>
+          <span class="scrolling-feature-item">
+            <el-icon><Star /></el-icon>
+            {{ $t('features.championRaced') }}
+          </span>
+          <span class="scrolling-feature-item">
+            <el-icon><Tools /></el-icon>
+            {{ $t('features.quickBuild') }}
+          </span>
+          <span class="scrolling-feature-item">
+            <el-icon><Location /></el-icon>
+            {{ $t('features.serviceLocations') }}
+          </span>
+          <span class="scrolling-feature-item">
+            <el-icon><Trophy /></el-icon>
+            {{ $t('features.germanEngineering') }}
+          </span>
+          <span class="scrolling-feature-item">
+            <el-icon><CreditCard /></el-icon>
+            {{ $t('features.flexiblePayment') }}
+          </span>
+        </div>
       </section>
     </section>
 
@@ -82,7 +82,7 @@
     <section class="product-hero">
       <div class="product-hero-bg">
         <video class="product-hero-video" autoplay muted loop playsinline>
-          <source src="@/assets/images/moving.mp4" type="video/mp4">
+          <source src="@/assets/images/moving.mp4" type="video/mp4" />
           <!-- 如果浏览器不支持视频，显示备用图片 -->
           Your browser does not support the video tag.
         </video>
@@ -191,8 +191,8 @@
             <p>{{ $t('support.sparePartsDesc') }}</p>
             <el-button type="primary">{{ $t('support.learnMore') }}</el-button>
           </div>
-                     <div class="support-card">
-                         <div class="support-icon">
+          <div class="support-card">
+            <div class="support-icon">
               <el-icon size="48"><Position /></el-icon>
             </div>
             <h3>{{ $t('support.serviceTitle') }}</h3>
@@ -216,18 +216,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { 
-  Tools, 
-  Location, 
-  CreditCard, 
-  Trophy, 
-  Van, 
-  Star,
-  Phone,
-  Setting,
-  Position,
-  Box
-} from '@element-plus/icons-vue'
+import BackgroundManager from '@/components/BackgroundManager.vue'
+import { Tools, Location, CreditCard, Trophy, Van, Star, Phone, Setting, Position, Box } from '@element-plus/icons-vue'
 
 const { t } = useI18n()
 
@@ -450,8 +440,6 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
-
-
 /* 产品分类 */
 .categories-section {
   padding: 80px 0;
@@ -477,7 +465,9 @@ onMounted(() => {
   overflow: hidden;
   background: #fff;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .category-card:hover {
@@ -590,7 +580,9 @@ onMounted(() => {
   padding: 30px 20px;
   background: #f8f9fa;
   border-radius: 12px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .support-card:hover {
@@ -622,36 +614,36 @@ onMounted(() => {
   .hero-title {
     font-size: 2.5rem;
   }
-  
+
   .hero-subtitle {
     font-size: 1.25rem;
   }
-  
+
   .features-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 15px;
   }
-  
+
   .categories-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .discover-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .discover-card.featured {
     grid-row: span 1;
   }
-  
+
   .support-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .product-hero-text h2 {
     font-size: 2rem;
   }
-  
+
   .scrolling-item {
     font-size: 2.5rem;
   }
@@ -661,22 +653,22 @@ onMounted(() => {
   .hero-title {
     font-size: 2rem;
   }
-  
+
   .hero-actions {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .features-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .support-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .section-title {
     font-size: 2rem;
   }
 }
-</style> 
+</style>
