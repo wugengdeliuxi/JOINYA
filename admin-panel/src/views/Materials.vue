@@ -142,7 +142,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, UploadFile } from 'element-plus'
 import { apiClient } from '@/api'
-import type { Material, Pagination, SearchFilters } from '@/types'
+import type { Material, Pagination, SearchFilters, PaginatedResponse } from '@/types'
 
 // 响应式数据
 const materials = ref<Material[]>([])
@@ -187,14 +187,13 @@ const fetchMaterials = async () => {
       ...searchForm
     }
 
-    const response = await apiClient.get<Material[]>('/materials', params)
+    const response = (await apiClient.get<Material[]>('/materials', params)) as PaginatedResponse<Material>
 
     if (response.success) {
       materials.value = response.data || []
-      // 使用类型断言来处理分页信息
-      const paginatedResponse = response as any
-      pagination.total = paginatedResponse.pagination?.total || 0
-      pagination.totalPages = paginatedResponse.pagination?.totalPages || 0
+      // 直接访问分页信息
+      pagination.total = response.pagination?.total || 0
+      pagination.totalPages = response.pagination?.totalPages || 0
     }
   } catch (error: any) {
     ElMessage.error('获取素材列表失败')
