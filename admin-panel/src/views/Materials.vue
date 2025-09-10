@@ -142,7 +142,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, UploadFile } from 'element-plus'
 import { apiClient } from '@/api'
-import type { Material, Pagination, SearchFilters, PaginatedResponse } from '@/types'
+import type { Material, Pagination, SearchFilters } from '@/types'
 
 // 响应式数据
 const materials = ref<Material[]>([])
