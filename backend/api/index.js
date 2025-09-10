@@ -64,7 +64,12 @@ app.use(helmet())
 // 全局CORS配置
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-frontend-domain.vercel.app', 'https://your-admin-domain.vercel.app']
+    ? [
+        'https://joinya-admin2.vercel.app',
+        'https://joinya-admin.vercel.app',
+        'https://joinya-web.vercel.app', // 如果您的web应用也部署在Vercel
+        'https://joinya.vercel.app' // 如果您的web应用部署在这个域名
+      ]
     : true, // 开发环境允许所有来源
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
