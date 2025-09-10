@@ -16,8 +16,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         path: '',
-        name: 'Dashboard',
-        component: () => import('@/views/Dashboard.vue')
+        redirect: '/materials'
       },
       {
         path: 'materials',
@@ -55,7 +54,7 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth && !token) {
     next('/login')
   } else if (to.path === '/login' && token) {
-    next('/')
+    next('/materials')
   } else {
     next()
   }

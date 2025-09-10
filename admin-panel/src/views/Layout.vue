@@ -5,42 +5,30 @@
       <div class="sidebar-header">
         <h2>JOINYA Admin</h2>
       </div>
-      
-      <el-menu
-        :default-active="activeMenu"
-        class="sidebar-menu"
-        router
-        background-color="#001529"
-        text-color="#fff"
-        active-text-color="#409EFF"
-      >
-        <el-menu-item index="/">
-          <el-icon><DataBoard /></el-icon>
-          <span>仪表盘</span>
-        </el-menu-item>
-        
+
+      <el-menu :default-active="activeMenu" class="sidebar-menu" router background-color="#001529" text-color="#fff" active-text-color="#409EFF">
         <el-menu-item index="/materials">
           <el-icon><Picture /></el-icon>
           <span>素材管理</span>
         </el-menu-item>
-        
+
         <el-menu-item index="/products">
           <el-icon><Goods /></el-icon>
           <span>产品管理</span>
         </el-menu-item>
-        
+
         <el-menu-item index="/users">
           <el-icon><User /></el-icon>
           <span>用户管理</span>
         </el-menu-item>
-        
+
         <el-menu-item index="/settings">
           <el-icon><Setting /></el-icon>
           <span>系统设置</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
-    
+
     <!-- 主内容区 -->
     <el-container>
       <!-- 顶部导航 -->
@@ -51,7 +39,7 @@
             <el-breadcrumb-item>{{ currentPageTitle }}</el-breadcrumb-item>
           </el-breadcrumb>
         </div>
-        
+
         <div class="header-right">
           <el-dropdown @command="handleCommand">
             <span class="user-info">
@@ -70,7 +58,7 @@
           </el-dropdown>
         </div>
       </el-header>
-      
+
       <!-- 内容区 -->
       <el-main class="main-content">
         <router-view />
@@ -103,13 +91,12 @@ const activeMenu = computed(() => route.path)
 // 当前页面标题
 const currentPageTitle = computed(() => {
   const routeMap: Record<string, string> = {
-    '/': '仪表盘',
     '/materials': '素材管理',
     '/products': '产品管理',
     '/users': '用户管理',
     '/settings': '系统设置'
   }
-  return routeMap[route.path] || '未知页面'
+  return routeMap[route.path] || '素材管理'
 })
 
 // 处理用户下拉菜单命令
@@ -121,7 +108,7 @@ const handleCommand = async (command: string) => {
         cancelButtonText: '取消',
         type: 'warning'
       })
-      
+
       localStorage.removeItem('admin_token')
       localStorage.removeItem('admin_user')
       router.push('/login')
