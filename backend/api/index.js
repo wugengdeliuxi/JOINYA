@@ -53,6 +53,26 @@ async function initializeApp() {
   const { default: productsRoutes } = await import('./products.js')
   const { default: usersRoutes } = await import('./users.js')
 
+  // 设置健康检查路由
+  app.get('/api/health', (req, res) => {
+    res.json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+      database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    })
+  })
+
+  // 根路径
+  app.get('/', (req, res) => {
+    res.json({
+      message: 'JOINYA Backend API Server',
+      version: '1.0.0',
+      status: 'running',
+      docs: '/api/health'
+    })
+  })
+
   return { authRoutes, materialsRoutes, productsRoutes, usersRoutes }
 }
 
@@ -103,26 +123,6 @@ const limiter = rateLimit({
   }
 })
 app.use('/api/', limiter)
-
-// 健康检查
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
-    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
-  })
-})
-
-// 根路径
-app.get('/', (req, res) => {
-  res.json({
-    message: 'JOINYA Backend API Server',
-    version: '1.0.0',
-    status: 'running',
-    docs: '/api/health'
-  })
-})
 
 // API路由将在异步初始化中设置
 
