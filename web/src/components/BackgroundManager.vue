@@ -14,8 +14,8 @@ const backgroundUrl = ref('')
 // 获取背景图片
 const fetchBackground = async () => {
   try {
-    const response = await materialsApi.getBackgrounds()
-    if (response.success && response.data && response.data.length > 0) {
+    const response = (await materialsApi.getBackgrounds()) as any
+    if (response?.data && response?.data?.length > 0) {
       // 使用第一个背景图片
       backgroundUrl.value = response.data[0].url
     }

@@ -123,7 +123,7 @@ const handleSearch = () => {
 // 获取动态logo
 const fetchLogo = async () => {
   try {
-    const response = await materialsApi.getLogos()
+    const response = (await materialsApi.getLogos()) as any
     if (response.success && response.data && response.data.length > 0) {
       // 使用第一个logo作为默认logo
       logoUrl.value = response.data[0].url
