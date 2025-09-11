@@ -4,7 +4,7 @@ import type { ApiResponse, PaginatedResponse } from '@/types'
 // 创建axios实例
 const api = axios.create({
   baseURL: process.env.NODE_ENV === 'production' 
-    ? 'https://joinya-api.vercel.app/api'
+    ? '/api'  // 使用同域名代理
     : 'http://localhost:3002/api',
   timeout: 10000,
   headers: {

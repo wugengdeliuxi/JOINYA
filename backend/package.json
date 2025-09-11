@@ -2,7 +2,7 @@
   "name": "joinya-backend",
   "version": "1.0.0",
   "description": "JOINYA Backend API Server - Vercel Serverless Functions",
-  "main": "index.js",
+  "main": "api/index.js",
   "type": "module",
   "scripts": {
     "dev": "set NODE_ENV=development && node api/index.js",
