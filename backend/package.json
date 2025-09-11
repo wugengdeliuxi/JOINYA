@@ -4,6 +4,9 @@
   "description": "JOINYA Backend API Server - Vercel Serverless Functions",
   "main": "api/index.js",
   "type": "module",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "dev": "set NODE_ENV=development && node api/index.js",
     "dev:win": "$env:NODE_ENV=\"development\"; node api/index.js",
