@@ -5,7 +5,7 @@
   "main": "api/index.js",
   "type": "module",
   "engines": {
-    "node": "18.x"
+    "node": "20.x"
   },
   "scripts": {
     "dev": "set NODE_ENV=development && node api/index.js",
@@ -29,7 +29,7 @@
     "express-rate-limit": "^7.1.5",
     "express-validator": "^7.0.1",
     "compression": "^1.7.4",
-    "@vercel/node": "^3.0.0"
+    "@vercel/node": "^3.0.7"
   },
   "devDependencies": {
     "vercel": "^32.0.0",
