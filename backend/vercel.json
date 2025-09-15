@@ -1,7 +1,10 @@
 {
   "version": 2,
-  "buildCommand": "echo 'No build required for API'",
-  "outputDirectory": ".",
+  "functions": {
+    "api/index.js": {
+      "runtime": "@vercel/node@3.0.7"
+    }
+  },
   "routes": [
     {
       "src": "/api/(.*)",
@@ -11,5 +14,7 @@
       "src": "/(.*)",
       "dest": "/api/index.js"
     }
-  ]
+  ],
+  "buildCommand": "echo 'No build required for API'",
+  "outputDirectory": "."
 }
