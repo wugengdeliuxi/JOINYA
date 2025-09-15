@@ -210,13 +210,23 @@ async function startApp() {
 
 // 如果是 Vercel 环境，需要立即初始化
 if (process.env.VERCEL) {
-  // Vercel 环境下的初始化
+  // Vercel 环境下的同步初始化
   connectDB().catch(console.error)
+  
+  // 同步设置路由
   initializeApp().then(routes => {
     app.use('/api/auth', routes.authRoutes)
     app.use('/api/materials', routes.materialsRoutes)
     app.use('/api/products', routes.productsRoutes)
     app.use('/api/users', routes.usersRoutes)
+    
+    // 404处理
+    app.use('/api/*', (req, res) => {
+      res.status(404).json({ 
+        success: false, 
+        message: 'API端点不存在' 
+      })
+    })
   }).catch(console.error)
 } else {
   // 本地开发环境
