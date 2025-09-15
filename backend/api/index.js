@@ -232,12 +232,30 @@ if (process.env.VERCEL) {
     })
   })
   
+  // 临时测试路由 - 检查异步路由加载状态
+  app.get('/api/status', (req, res) => {
+    res.json({
+      message: 'API状态检查',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+      database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      note: '其他API路由正在异步加载中...'
+    })
+  })
+  
   // 异步设置其他路由
   initializeApp().then(routes => {
+    console.log('✅ Vercel环境：开始设置API路由')
     app.use('/api/auth', routes.authRoutes)
     app.use('/api/materials', routes.materialsRoutes)
     app.use('/api/products', routes.productsRoutes)
     app.use('/api/users', routes.usersRoutes)
+    
+    console.log('✅ Vercel环境：API路由设置完成')
+    console.log('   - /api/auth')
+    console.log('   - /api/materials')
+    console.log('   - /api/products')
+    console.log('   - /api/users')
     
     // 404处理
     app.use('/api/*', (req, res) => {
@@ -246,7 +264,9 @@ if (process.env.VERCEL) {
         message: 'API端点不存在' 
       })
     })
-  }).catch(console.error)
+  }).catch(error => {
+    console.error('❌ Vercel环境：API路由设置失败:', error)
+  })
 } else {
   // 本地开发环境
   startApp()
