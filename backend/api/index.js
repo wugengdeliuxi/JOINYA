@@ -213,7 +213,26 @@ if (process.env.VERCEL) {
   // Vercel 环境下的同步初始化
   connectDB().catch(console.error)
   
-  // 同步设置路由
+  // 立即设置基础路由（同步）
+  app.get('/api/health', (req, res) => {
+    res.json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+      database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    })
+  })
+  
+  app.get('/', (req, res) => {
+    res.json({
+      message: 'JOINYA Backend API Server',
+      version: '1.0.0',
+      status: 'running',
+      docs: '/api/health'
+    })
+  })
+  
+  // 异步设置其他路由
   initializeApp().then(routes => {
     app.use('/api/auth', routes.authRoutes)
     app.use('/api/materials', routes.materialsRoutes)
