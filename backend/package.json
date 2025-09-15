@@ -5,7 +5,7 @@
   "main": "api/index.js",
   "type": "module",
   "engines": {
-    "node": "20.x"
+    "node": "22.x"
   },
   "scripts": {
     "dev": "set NODE_ENV=development && node api/index.js",
