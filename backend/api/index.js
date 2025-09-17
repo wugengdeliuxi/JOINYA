@@ -275,39 +275,65 @@ if (process.env.VERCEL) {
     })
   })
   
-  // 延迟设置其他路由，避免初始化时的冲突
-  setTimeout(() => {
-    try {
-      import('./auth.js').then(({ default: authRoutes }) => {
-        app.use('/api/auth', authRoutes)
-        console.log('✅ /api/auth 路由已设置')
-      }).catch(err => console.error('❌ auth路由导入失败:', err))
+  // 直接测试materials路径
+  app.get('/api/materials-direct', (req, res) => {
+    res.json({
+      success: true,
+      message: 'Materials 直接测试路由',
+      timestamp: new Date().toISOString(),
+      query: req.query,
+      note: '这是直接在主文件中定义的路由'
+    })
+  })
+  
+  // 直接测试auth路径
+  app.get('/api/auth-direct', (req, res) => {
+    res.json({
+      success: true,
+      message: 'Auth 直接测试路由',
+      timestamp: new Date().toISOString(),
+      note: '这是直接在主文件中定义的auth路由'
+    })
+  })
+  
+  // 简单的login测试路由
+  app.post('/api/auth-direct/login', (req, res) => {
+    res.json({
+      success: true,
+      message: 'Auth Login 直接测试路由',
+      timestamp: new Date().toISOString(),
+      body: req.body,
+      note: '这是直接在主文件中定义的login路由'
+    })
+  })
+  
+  // 直接设置路由，不使用延迟
+  try {
+    // 使用Promise.all等待所有路由加载完成
+    Promise.all([
+      import('./auth.js'),
+      import('./materials-simple.js'),
+      import('./products.js'),
+      import('./users.js')
+    ]).then(([authModule, materialsModule, productsModule, usersModule]) => {
+      // 设置所有路由
+      app.use('/api/auth', authModule.default)
+      app.use('/api/materials', materialsModule.default)
+      app.use('/api/products', productsModule.default)
+      app.use('/api/users', usersModule.default)
       
-      import('./materials.js').then(({ default: materialsRoutes }) => {
-        app.use('/api/materials', materialsRoutes)
-        console.log('✅ /api/materials 路由已设置')
-        console.log('   - GET /api/materials (获取素材列表)')
-        console.log('   - POST /api/materials/upload (上传素材)')
-        console.log('   - GET /api/materials/:id (获取单个素材)')
-      }).catch(err => {
-        console.error('❌ materials路由导入失败:', err)
-        console.error('错误详情:', err.message)
-        console.error('错误堆栈:', err.stack)
-      })
-      
-      import('./products.js').then(({ default: productsRoutes }) => {
-        app.use('/api/products', productsRoutes)
-        console.log('✅ /api/products 路由已设置')
-      }).catch(err => console.error('❌ products路由导入失败:', err))
-      
-      import('./users.js').then(({ default: usersRoutes }) => {
-        app.use('/api/users', usersRoutes)
-        console.log('✅ /api/users 路由已设置')
-      }).catch(err => console.error('❌ users路由导入失败:', err))
-    } catch (error) {
-      console.error('❌ Vercel环境：路由设置失败:', error)
-    }
-  }, 100) // 延迟100ms
+      console.log('✅ 所有API路由已设置完成')
+      console.log('   - /api/auth')
+      console.log('   - /api/materials (简单版本)')
+      console.log('   - /api/products')
+      console.log('   - /api/users')
+    }).catch(err => {
+      console.error('❌ 路由设置失败:', err)
+      console.error('错误详情:', err.message)
+    })
+  } catch (error) {
+    console.error('❌ Vercel环境：路由设置失败:', error)
+  }
   
 } else {
   // 本地开发环境
