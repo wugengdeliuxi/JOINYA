@@ -129,6 +129,7 @@ app.use('/api/', limiter)
 // 错误处理中间件
 app.use((err, req, res, next) => {
   console.error('Error:', err)
+  console.error('Error stack:', err.stack)
   
   if (err.name === 'ValidationError') {
     return res.status(400).json({
@@ -149,7 +150,8 @@ app.use((err, req, res, next) => {
     success: false,
     message: process.env.NODE_ENV === 'production' 
       ? '服务器内部错误' 
-      : err.message
+      : err.message,
+    stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined
   })
 })
 
@@ -219,7 +221,8 @@ if (process.env.VERCEL) {
       status: 'ok', 
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV,
-      database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+      database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      vercel: process.env.VERCEL ? 'true' : 'false'
     })
   })
   
@@ -241,6 +244,23 @@ if (process.env.VERCEL) {
       database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
       note: '其他API路由正在异步加载中...'
     })
+  })
+  
+  // 测试路由 - 检查auth路由是否正常
+  app.get('/api/test-auth', (req, res) => {
+    try {
+      res.json({
+        message: 'Auth路由测试',
+        timestamp: new Date().toISOString(),
+        status: 'success'
+      })
+    } catch (error) {
+      console.error('测试路由错误:', error)
+      res.status(500).json({
+        message: '测试路由错误',
+        error: error.message
+      })
+    }
   })
   
   // 异步设置所有路由
