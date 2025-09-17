@@ -29,7 +29,9 @@
     "express-rate-limit": "^7.1.5",
     "express-validator": "^7.0.1",
     "compression": "^1.7.4",
-    "@vercel/node": "^3.0.7"
+    "@vercel/node": "^3.0.7",
+    "@vercel/blob": "^0.19.0",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "vercel": "^32.0.0",

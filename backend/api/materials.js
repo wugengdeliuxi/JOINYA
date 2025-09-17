@@ -2,7 +2,7 @@ import express from 'express'
 import { body, query, validationResult } from 'express-validator'
 import Material from '../models/Material.js'
 import { auth, requireEditor } from '../middleware/auth.js'
-import { upload, handleUploadError, generateFileUrl } from '../middleware/upload.js'
+import { upload, uploadToBlob, uploadMultipleToBlob } from '../lib/upload.js'
 
 const router = express.Router()
 
@@ -126,14 +126,23 @@ router.post('/upload', auth, requireEditor, upload.single('file'), [
     // 处理标签
     const tagArray = tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : []
 
-    // 生成文件URL
+    // 上传到Vercel Blob Storage
     console.log('文件信息:')
-    console.log('  file.path:', file.path)
-    console.log('  file.filename:', file.filename)
     console.log('  file.originalname:', file.originalname)
+    console.log('  file.mimetype:', file.mimetype)
+    console.log('  file.size:', file.size)
     
-    const fileUrl = generateFileUrl(req, file.path)
-    console.log('  生成的URL:', fileUrl)
+    const uploadResult = await uploadToBlob(file, 'materials')
+    console.log('  上传结果:', uploadResult)
+    
+    if (!uploadResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: '文件上传失败'
+      })
+    }
+    
+    const fileUrl = uploadResult.url
 
     // 创建素材记录
     const material = new Material({

@@ -103,16 +103,27 @@ app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
 // 静态文件服务 - 提供上传文件的访问
-const uploadsPath = join(__dirname, '..', 'uploads')
-console.log('📁 静态文件服务路径:', uploadsPath)
-console.log('📁 __dirname:', __dirname)
+if (!process.env.VERCEL) {
+  // 只在非Vercel环境（本地开发）中提供静态文件服务
+  const uploadsPath = join(__dirname, '..', 'uploads')
+  console.log('📁 静态文件服务路径:', uploadsPath)
+  console.log('📁 __dirname:', __dirname)
 
-// 静态文件服务 - 添加跨域资源策略支持
-app.use('/uploads', (req, res, next) => {
-  // 设置跨域资源策略为 cross-origin，允许跨域访问
-  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
-  next()
-}, express.static(uploadsPath))
+  // 静态文件服务 - 添加跨域资源策略支持
+  app.use('/uploads', (req, res, next) => {
+    // 设置跨域资源策略为 cross-origin，允许跨域访问
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
+    next()
+  }, express.static(uploadsPath))
+} else {
+  // Vercel环境下的静态文件处理
+  app.use('/uploads', (req, res) => {
+    res.status(404).json({
+      success: false,
+      message: '静态文件服务在Vercel环境中不可用，请使用其他文件存储服务'
+    })
+  })
+}
 
 // 速率限制
 const limiter = rateLimit({
@@ -263,6 +274,24 @@ if (process.env.VERCEL) {
     }
   })
   
+  // 测试路由 - 检查上传功能
+  app.get('/api/test-upload', (req, res) => {
+    try {
+      res.json({
+        message: '上传功能测试',
+        timestamp: new Date().toISOString(),
+        status: 'success',
+        note: '使用 /api/materials/upload 进行文件上传测试'
+      })
+    } catch (error) {
+      console.error('上传测试路由错误:', error)
+      res.status(500).json({
+        message: '上传测试路由错误',
+        error: error.message
+      })
+    }
+  })
+  
   // 异步设置所有路由
   (async () => {
     try {
@@ -284,17 +313,18 @@ if (process.env.VERCEL) {
       console.log('   - /api/products')
       console.log('   - /api/users')
       
-      // 404处理
-      app.use('/api/*', (req, res) => {
-        res.status(404).json({ 
-          success: false, 
-          message: 'API端点不存在' 
-        })
-      })
     } catch (error) {
       console.error('❌ Vercel环境：路由设置失败:', error)
     }
   })()
+  
+  // 404处理 - 放在最后，确保所有路由都设置完成后再处理
+  app.use('/api/*', (req, res) => {
+    res.status(404).json({ 
+      success: false, 
+      message: 'API端点不存在' 
+    })
+  })
 } else {
   // 本地开发环境
   startApp()
