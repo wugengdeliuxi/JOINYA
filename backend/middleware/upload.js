@@ -7,42 +7,54 @@ import { dirname } from 'path'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-// 确保上传目录存在
-const uploadDir = path.join(__dirname, '..', 'uploads')
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true })
-}
+// 根据环境选择存储方式
+let storage
 
-// 配置存储
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // 根据文件类型创建子目录
-    let subDir = 'general'
-    if (file.mimetype.startsWith('image/')) {
-      subDir = 'images'
-    } else if (file.mimetype.startsWith('video/')) {
-      subDir = 'videos'
-    } else if (file.mimetype.startsWith('application/')) {
-      subDir = 'documents'
-    }
-    
-    const targetDir = path.join(uploadDir, subDir)
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true })
-    }
-    
-    cb(null, targetDir)
-  },
-  filename: (req, file, cb) => {
-    // 生成唯一文件名：时间戳-随机数-原文件名
-    const timestamp = Date.now()
-    const random = Math.round(Math.random() * 1E9)
-    const ext = path.extname(file.originalname)
-    const name = path.basename(file.originalname, ext)
-    const filename = `${timestamp}-${random}-${name}${ext}`
-    cb(null, filename)
+if (process.env.VERCEL) {
+  // Vercel环境：使用内存存储
+  console.log('⚠️ Vercel环境：使用内存存储，文件将上传到Cloudinary')
+  storage = multer.memoryStorage()
+} else {
+  // 本地开发环境：使用磁盘存储
+  console.log('📁 本地环境：使用磁盘存储')
+  
+  // 确保上传目录存在
+  const uploadDir = path.join(__dirname, '..', 'uploads')
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true })
   }
-})
+
+  // 配置磁盘存储
+  storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      // 根据文件类型创建子目录
+      let subDir = 'general'
+      if (file.mimetype.startsWith('image/')) {
+        subDir = 'images'
+      } else if (file.mimetype.startsWith('video/')) {
+        subDir = 'videos'
+      } else if (file.mimetype.startsWith('application/')) {
+        subDir = 'documents'
+      }
+      
+      const targetDir = path.join(uploadDir, subDir)
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true })
+      }
+      
+      cb(null, targetDir)
+    },
+    filename: (req, file, cb) => {
+      // 生成唯一文件名：时间戳-随机数-原文件名
+      const timestamp = Date.now()
+      const random = Math.round(Math.random() * 1E9)
+      const ext = path.extname(file.originalname)
+      const name = path.basename(file.originalname, ext)
+      const filename = `${timestamp}-${random}-${name}${ext}`
+      cb(null, filename)
+    }
+  })
+}
 
 // 文件过滤器
 const fileFilter = (req, file, cb) => {
@@ -113,11 +125,18 @@ export const handleUploadError = (error, req, res, next) => {
 
 // 生成文件URL
 export const generateFileUrl = (req, filename) => {
+  if (process.env.VERCEL) {
+    // Vercel环境中，文件应该已经上传到Cloudinary
+    console.warn('⚠️ Vercel环境中不应使用本地文件URL，请使用Cloudinary URL')
+    return null
+  }
+  
   const baseUrl = process.env.NODE_ENV === 'production' 
     ? 'https://joinya-api.vercel.app'
     : `http://localhost:${process.env.PORT || 3002}`
   
   // 从文件路径中提取子目录
+  const uploadDir = path.join(__dirname, '..', 'uploads')
   const relativePath = filename.replace(uploadDir, '').replace(/\\/g, '/')
   return `${baseUrl}/uploads${relativePath}`
 }
