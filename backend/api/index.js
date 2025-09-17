@@ -255,6 +255,16 @@ if (process.env.VERCEL) {
     })
   })
   
+  // 测试materials路由是否已加载
+  app.get('/api/test-materials', (req, res) => {
+    res.json({
+      message: 'Materials路由测试',
+      timestamp: new Date().toISOString(),
+      status: 'success',
+      note: '如果这个能访问，说明基础路由正常'
+    })
+  })
+  
   // 延迟设置其他路由，避免初始化时的冲突
   setTimeout(() => {
     try {
@@ -266,7 +276,14 @@ if (process.env.VERCEL) {
       import('./materials.js').then(({ default: materialsRoutes }) => {
         app.use('/api/materials', materialsRoutes)
         console.log('✅ /api/materials 路由已设置')
-      }).catch(err => console.error('❌ materials路由导入失败:', err))
+        console.log('   - GET /api/materials (获取素材列表)')
+        console.log('   - POST /api/materials/upload (上传素材)')
+        console.log('   - GET /api/materials/:id (获取单个素材)')
+      }).catch(err => {
+        console.error('❌ materials路由导入失败:', err)
+        console.error('错误详情:', err.message)
+        console.error('错误堆栈:', err.stack)
+      })
       
       import('./products.js').then(({ default: productsRoutes }) => {
         app.use('/api/products', productsRoutes)
