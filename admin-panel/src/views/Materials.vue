@@ -46,7 +46,7 @@
         <el-col v-for="material in materials" :key="material.id" :xs="24" :sm="12" :md="8" :lg="6" :xl="4">
           <div class="material-card">
             <div class="material-preview">
-              <img v-if="material.type === 'image'" :src="material.url" :alt="material.name" @click="previewMaterial(material)" />
+              <img v-if="material.type === 'image'" :src="getThumbnailUrl(material)" :alt="material.name" @click="previewMaterial(material)" @error="handleImageError" />
               <video v-else-if="material.type === 'video'" :src="material.url" controls @click="previewMaterial(material)" />
               <div v-else class="document-preview">
                 <el-icon size="48"><Document /></el-icon>
@@ -68,6 +68,10 @@
                 <el-button size="small" @click="copyUrl(material.url)">
                   <el-icon><Link /></el-icon>
                   复制链接
+                </el-button>
+                <el-button size="small" @click="downloadMaterial(material.id)">
+                  <el-icon><Download /></el-icon>
+                  下载
                 </el-button>
                 <el-button size="small" type="danger" @click="deleteMaterial(material.id)">
                   <el-icon><Delete /></el-icon>
@@ -124,6 +128,12 @@
               <div class="el-upload__tip">支持图片、视频、文档格式，文件大小不超过50MB</div>
             </template>
           </el-upload>
+
+          <!-- 上传进度条 -->
+          <div v-if="uploading" class="upload-progress">
+            <el-progress :percentage="uploadProgress" :show-text="true" />
+            <p class="progress-text">正在上传到Cloudinary...</p>
+          </div>
         </el-form-item>
       </el-form>
 
@@ -148,6 +158,7 @@ import type { Material, Pagination, SearchFilters } from '@/types'
 const materials = ref<Material[]>([])
 const showUploadDialog = ref(false)
 const uploading = ref(false)
+const uploadProgress = ref(0)
 const uploadFormRef = ref<FormInstance>()
 const uploadRef = ref()
 
@@ -258,7 +269,13 @@ const handleUpload = async () => {
       console.log(`  ${key}:`, value)
     }
 
-    const response = await apiClient.post<Material>('/materials/upload', formData)
+    const response = await apiClient.post<Material>('/materials/upload', formData, {
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total) {
+          uploadProgress.value = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+        }
+      }
+    })
 
     if (response.success) {
       ElMessage.success('上传成功')
@@ -305,10 +322,45 @@ const copyUrl = (url: string) => {
   })
 }
 
+// 下载素材
+const downloadMaterial = async (id: string) => {
+  try {
+    const response = await apiClient.get(`/materials/${id}/download`)
+
+    if (response.success && response.data) {
+      const material = response.data
+      const downloadUrl = material.downloadUrl || material.url
+
+      // 创建下载链接
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = material.name
+      link.target = '_blank'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      ElMessage.success('开始下载')
+    } else {
+      ElMessage.error('获取下载链接失败')
+    }
+  } catch (error: any) {
+    ElMessage.error('下载失败')
+  }
+}
+
 // 预览素材
 const previewMaterial = (material: Material) => {
-  // 这里可以实现预览功能
-  console.log('预览素材:', material)
+  // 使用Cloudinary的图片变换功能生成预览图
+  let previewUrl = material.url
+
+  if (material.type === 'image' && material.cloudinaryPublicId) {
+    // 使用Cloudinary的图片变换功能，生成适合预览的尺寸
+    previewUrl = material.url.replace('/upload/', '/upload/w_800,h_600,c_fit/')
+  }
+
+  // 打开预览窗口
+  window.open(previewUrl, '_blank')
 }
 
 // 重置上传表单
@@ -321,6 +373,7 @@ const resetUploadForm = () => {
     file: null
   })
   uploadRef.value?.clearFiles()
+  uploadProgress.value = 0
 }
 
 // 工具函数
@@ -348,6 +401,32 @@ const formatFileSize = (bytes: number) => {
   const sizes = ['B', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+// 获取缩略图URL
+const getThumbnailUrl = (material: Material) => {
+  // 如果有缩略图URL，直接使用
+  if (material.thumbnailUrl) {
+    return material.thumbnailUrl
+  }
+
+  // 如果有Cloudinary public_id，生成缩略图
+  if (material.cloudinaryPublicId && material.type === 'image') {
+    // 使用Cloudinary的图片变换功能生成缩略图
+    return material.url.replace('/upload/', '/upload/w_300,h_200,c_fill/')
+  }
+
+  // 否则使用原图
+  return material.url
+}
+
+// 处理图片加载错误
+const handleImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  // 如果缩略图加载失败，尝试使用原图
+  if (img.src.includes('/upload/w_300,h_200,c_fill/')) {
+    img.src = img.src.replace('/upload/w_300,h_200,c_fill/', '/upload/')
+  }
 }
 
 // 初始化
@@ -467,5 +546,16 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   margin-top: 20px;
+}
+
+.upload-progress {
+  margin-top: 10px;
+}
+
+.progress-text {
+  text-align: center;
+  margin-top: 5px;
+  font-size: 12px;
+  color: #666;
 }
 </style>

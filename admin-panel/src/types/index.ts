@@ -24,6 +24,13 @@ export interface Material {
   uploadedBy: string
   createdAt: string
   updatedAt: string
+  // Cloudinary相关字段
+  cloudinaryPublicId?: string
+  cloudinaryVersion?: string
+  cloudinarySignature?: string
+  // 下载相关
+  downloadUrl?: string
+  thumbnailUrl?: string
 }
 
 // 产品相关类型
