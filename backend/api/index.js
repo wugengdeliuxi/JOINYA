@@ -307,7 +307,7 @@ if (process.env.VERCEL) {
     // 使用Promise.all等待所有路由加载完成
     Promise.all([
       import('./auth.js'),
-      import('./materials-simple.js'),
+      import('./materials.js'),
       import('./products.js'),
       import('./users.js')
     ]).then(([authModule, materialsModule, productsModule, usersModule]) => {
@@ -319,7 +319,7 @@ if (process.env.VERCEL) {
       
       console.log('✅ 所有API路由已设置完成')
       console.log('   - /api/auth')
-      console.log('   - /api/materials (简单版本)')
+      console.log('   - /api/materials (完整版本，包含upload)')
       console.log('   - /api/products')
       console.log('   - /api/users')
     }).catch(err => {

@@ -25,6 +25,19 @@ const materialSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  // Cloudinary相关字段
+  cloudinaryPublicId: {
+    type: String,
+    default: null
+  },
+  cloudinaryVersion: {
+    type: String,
+    default: null
+  },
+  cloudinarySignature: {
+    type: String,
+    default: null
+  },
   size: {
     type: Number,
     required: true

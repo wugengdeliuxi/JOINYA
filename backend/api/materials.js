@@ -2,7 +2,7 @@ import express from 'express'
 import { body, query, validationResult } from 'express-validator'
 import Material from '../models/Material.js'
 import { auth, requireEditor } from '../middleware/auth.js'
-import { upload, uploadToBlob, uploadMultipleToBlob } from '../lib/upload.js'
+import { upload, uploadToCloudinary, uploadMultipleToCloudinary, deleteFromCloudinary } from '../lib/upload-cloudinary.js'
 import { handleUploadError } from '../middleware/upload.js'
 
 const router = express.Router()
@@ -127,13 +127,13 @@ router.post('/upload', auth, requireEditor, upload.single('file'), [
     // 处理标签
     const tagArray = tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : []
 
-    // 上传到Vercel Blob Storage
+    // 上传到Cloudinary
     console.log('文件信息:')
     console.log('  file.originalname:', file.originalname)
     console.log('  file.mimetype:', file.mimetype)
     console.log('  file.size:', file.size)
     
-    const uploadResult = await uploadToBlob(file, 'materials')
+    const uploadResult = await uploadToCloudinary(file, 'joinya-materials')
     console.log('  上传结果:', uploadResult)
     
     if (!uploadResult.success) {
@@ -155,7 +155,11 @@ router.post('/upload', auth, requireEditor, upload.single('file'), [
       mimeType: file.mimetype,
       description: description || '',
       tags: tagArray,
-      uploadedBy: req.user._id
+      uploadedBy: req.user._id,
+      // 保存Cloudinary信息
+      cloudinaryPublicId: uploadResult.public_id,
+      cloudinaryVersion: uploadResult.version,
+      cloudinarySignature: uploadResult.signature
     })
 
     await material.save()
@@ -227,6 +231,17 @@ router.delete('/:id', auth, requireEditor, async (req, res) => {
       })
     }
 
+    // 如果有Cloudinary public_id，先删除Cloudinary中的文件
+    if (material.cloudinaryPublicId) {
+      try {
+        const deleteResult = await deleteFromCloudinary(material.cloudinaryPublicId)
+        console.log('Cloudinary删除结果:', deleteResult)
+      } catch (error) {
+        console.error('删除Cloudinary文件失败:', error)
+        // 即使Cloudinary删除失败，也继续删除数据库记录
+      }
+    }
+
     await Material.findByIdAndDelete(req.params.id)
 
     res.json({
@@ -294,6 +309,51 @@ router.put('/:id', auth, requireEditor, [
     })
   } catch (error) {
     console.error('Update material error:', error)
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    })
+  }
+})
+
+// 获取文件下载链接
+router.get('/:id/download', async (req, res) => {
+  try {
+    const material = await Material.findById(req.params.id)
+      .populate('uploadedBy', 'username')
+      .lean()
+
+    if (!material) {
+      return res.status(404).json({
+        success: false,
+        message: '素材不存在'
+      })
+    }
+
+    // 返回文件信息和下载链接
+    res.json({
+      success: true,
+      data: {
+        id: material._id,
+        name: material.name,
+        type: material.type,
+        category: material.category,
+        url: material.url,
+        size: material.size,
+        mimeType: material.mimeType,
+        description: material.description,
+        tags: material.tags,
+        uploadedBy: material.uploadedBy,
+        createdAt: material.createdAt,
+        updatedAt: material.updatedAt,
+        // 下载链接（直接使用Cloudinary URL）
+        downloadUrl: material.url,
+        // 如果需要缩略图
+        thumbnailUrl: material.thumbnail || material.url
+      }
+    })
+  } catch (error) {
+    console.error('Get download link error:', error)
     res.status(500).json({
       success: false,
       message: '服务器错误'
