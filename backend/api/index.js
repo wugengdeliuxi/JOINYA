@@ -38,35 +38,10 @@ if (process.env.VERCEL) {
 // 连接数据库
 async function connectDB() {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://joinya-admin:3AWc8DFZf7Papo5u@joinya-cluster.qpogy8c.mongodb.net/?retryWrites=true&w=majority&appName=joinya-cluster'
-    
-    // 为Vercel serverless环境优化Mongoose配置
-    const mongooseOptions = {
-      serverSelectionTimeoutMS: 5000, // 5秒超时
-      socketTimeoutMS: 45000, // 45秒socket超时
-      bufferCommands: false, // 禁用缓冲命令
-      bufferMaxEntries: 0, // 禁用缓冲
-      maxPoolSize: 1, // 限制连接池大小
-      minPoolSize: 0, // 最小连接池大小
-      maxIdleTimeMS: 10000, // 10秒空闲时间
-      connectTimeoutMS: 10000, // 10秒连接超时
-    }
-    
-    await mongoose.connect(mongoUri, mongooseOptions)
-    console.log('✅ MongoDB 连接成功')
-    
-    // 监听连接事件
-    mongoose.connection.on('error', (err) => {
-      console.error('❌ MongoDB 连接错误:', err)
-    })
-    
-    mongoose.connection.on('disconnected', () => {
-      console.log('⚠️ MongoDB 连接断开')
-    })
-    
+    await mongoose.connect('mongodb+srv://joinya-admin:3AWc8DFZf7Papo5u@joinya-cluster.qpogy8c.mongodb.net/?retryWrites=true&w=majority&appName=joinya-cluster')
   } catch (error) {
     console.error('❌ MongoDB 连接失败:', error.message)
-    console.log('💡 请检查数据库连接配置')
+    console.log('💡 请检查 .env 文件中的 MONGODB_URI 配置')
   }
 }
 
@@ -256,36 +231,13 @@ if (process.env.VERCEL) {
   // Vercel 环境下的简化初始化
   connectDB().catch(console.error)
   
-  // 添加数据库连接状态检查中间件
-  app.use('/api/*', (req, res, next) => {
-    if (mongoose.connection.readyState !== 1) {
-      console.log('⚠️ 数据库未连接，尝试重新连接...')
-      connectDB().catch(console.error)
-    }
-    next()
-  })
-  
   // 立即设置基础路由（同步）
   app.get('/api/health', (req, res) => {
-    const dbState = mongoose.connection.readyState
-    const dbStatus = {
-      0: 'disconnected',
-      1: 'connected',
-      2: 'connecting',
-      3: 'disconnecting'
-    }
-    
     res.json({ 
       status: 'ok', 
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV,
-      database: {
-        state: dbState,
-        status: dbStatus[dbState] || 'unknown',
-        host: mongoose.connection.host,
-        port: mongoose.connection.port,
-        name: mongoose.connection.name
-      },
+      database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
       vercel: process.env.VERCEL ? 'true' : 'false'
     })
   })
