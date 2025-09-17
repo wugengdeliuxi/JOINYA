@@ -210,43 +210,8 @@ async function startApp() {
 
 // 如果是 Vercel 环境，需要立即初始化
 if (process.env.VERCEL) {
-  // Vercel 环境下的初始化
-  async function initVercelApp() {
-    try {
-      // 先连接数据库
-      await connectDB()
-      console.log('✅ Vercel环境：数据库连接成功')
-      
-      // 然后初始化路由
-      const routes = await initializeApp()
-      console.log('✅ Vercel环境：路由初始化成功')
-      
-      // 设置API路由
-      app.use('/api/auth', routes.authRoutes)
-      app.use('/api/materials', routes.materialsRoutes)
-      app.use('/api/products', routes.productsRoutes)
-      app.use('/api/users', routes.usersRoutes)
-      
-      console.log('✅ Vercel环境：API路由设置完成')
-      console.log('   - /api/auth')
-      console.log('   - /api/materials')
-      console.log('   - /api/products')
-      console.log('   - /api/users')
-      
-      // 404处理
-      app.use('/api/*', (req, res) => {
-        res.status(404).json({ 
-          success: false, 
-          message: 'API端点不存在' 
-        })
-      })
-    } catch (error) {
-      console.error('❌ Vercel环境：初始化失败:', error)
-    }
-  }
-  
-  // 启动初始化
-  initVercelApp()
+  // Vercel 环境下的同步初始化
+  connectDB().catch(console.error)
   
   // 立即设置基础路由（同步）
   app.get('/api/health', (req, res) => {
@@ -277,6 +242,39 @@ if (process.env.VERCEL) {
       note: '其他API路由正在异步加载中...'
     })
   })
+  
+  // 异步设置所有路由
+  (async () => {
+    try {
+      // 直接导入路由模块
+      const authRoutes = (await import('./auth.js')).default
+      const materialsRoutes = (await import('./materials.js')).default
+      const productsRoutes = (await import('./products.js')).default
+      const usersRoutes = (await import('./users.js')).default
+      
+      // 设置API路由
+      app.use('/api/auth', authRoutes)
+      app.use('/api/materials', materialsRoutes)
+      app.use('/api/products', productsRoutes)
+      app.use('/api/users', usersRoutes)
+      
+      console.log('✅ Vercel环境：API路由设置完成（同步方式）')
+      console.log('   - /api/auth')
+      console.log('   - /api/materials')
+      console.log('   - /api/products')
+      console.log('   - /api/users')
+      
+      // 404处理
+      app.use('/api/*', (req, res) => {
+        res.status(404).json({ 
+          success: false, 
+          message: 'API端点不存在' 
+        })
+      })
+    } catch (error) {
+      console.error('❌ Vercel环境：路由设置失败:', error)
+    }
+  })()
 } else {
   // 本地开发环境
   startApp()
