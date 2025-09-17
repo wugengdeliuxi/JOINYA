@@ -223,7 +223,7 @@ async function startApp() {
 
 // 如果是 Vercel 环境，需要立即初始化
 if (process.env.VERCEL) {
-  // Vercel 环境下的同步初始化
+  // Vercel 环境下的简化初始化
   connectDB().catch(console.error)
   
   // 立即设置基础路由（同步）
@@ -246,85 +246,42 @@ if (process.env.VERCEL) {
     })
   })
   
-  // 临时测试路由 - 检查异步路由加载状态
-  app.get('/api/status', (req, res) => {
+  // 简化的测试路由
+  app.get('/api/test', (req, res) => {
     res.json({
-      message: 'API状态检查',
+      message: 'Vercel环境测试',
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV,
-      database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-      note: '其他API路由正在异步加载中...'
+      status: 'success'
     })
   })
   
-  // 测试路由 - 检查auth路由是否正常
-  app.get('/api/test-auth', (req, res) => {
+  // 延迟设置其他路由，避免初始化时的冲突
+  setTimeout(() => {
     try {
-      res.json({
-        message: 'Auth路由测试',
-        timestamp: new Date().toISOString(),
-        status: 'success'
-      })
-    } catch (error) {
-      console.error('测试路由错误:', error)
-      res.status(500).json({
-        message: '测试路由错误',
-        error: error.message
-      })
-    }
-  })
-  
-  // 测试路由 - 检查上传功能
-  app.get('/api/test-upload', (req, res) => {
-    try {
-      res.json({
-        message: '上传功能测试',
-        timestamp: new Date().toISOString(),
-        status: 'success',
-        note: '使用 /api/materials/upload 进行文件上传测试'
-      })
-    } catch (error) {
-      console.error('上传测试路由错误:', error)
-      res.status(500).json({
-        message: '上传测试路由错误',
-        error: error.message
-      })
-    }
-  })
-  
-  // 异步设置所有路由
-  (async () => {
-    try {
-      // 直接导入路由模块
-      const authRoutes = (await import('./auth.js')).default
-      const materialsRoutes = (await import('./materials.js')).default
-      const productsRoutes = (await import('./products.js')).default
-      const usersRoutes = (await import('./users.js')).default
+      import('./auth.js').then(({ default: authRoutes }) => {
+        app.use('/api/auth', authRoutes)
+        console.log('✅ /api/auth 路由已设置')
+      }).catch(err => console.error('❌ auth路由导入失败:', err))
       
-      // 设置API路由
-      app.use('/api/auth', authRoutes)
-      app.use('/api/materials', materialsRoutes)
-      app.use('/api/products', productsRoutes)
-      app.use('/api/users', usersRoutes)
+      import('./materials.js').then(({ default: materialsRoutes }) => {
+        app.use('/api/materials', materialsRoutes)
+        console.log('✅ /api/materials 路由已设置')
+      }).catch(err => console.error('❌ materials路由导入失败:', err))
       
-      console.log('✅ Vercel环境：API路由设置完成（同步方式）')
-      console.log('   - /api/auth')
-      console.log('   - /api/materials')
-      console.log('   - /api/products')
-      console.log('   - /api/users')
+      import('./products.js').then(({ default: productsRoutes }) => {
+        app.use('/api/products', productsRoutes)
+        console.log('✅ /api/products 路由已设置')
+      }).catch(err => console.error('❌ products路由导入失败:', err))
       
+      import('./users.js').then(({ default: usersRoutes }) => {
+        app.use('/api/users', usersRoutes)
+        console.log('✅ /api/users 路由已设置')
+      }).catch(err => console.error('❌ users路由导入失败:', err))
     } catch (error) {
       console.error('❌ Vercel环境：路由设置失败:', error)
     }
-  })()
+  }, 100) // 延迟100ms
   
-  // 404处理 - 放在最后，确保所有路由都设置完成后再处理
-  app.use('/api/*', (req, res) => {
-    res.status(404).json({ 
-      success: false, 
-      message: 'API端点不存在' 
-    })
-  })
 } else {
   // 本地开发环境
   startApp()
