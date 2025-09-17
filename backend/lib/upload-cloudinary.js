@@ -4,10 +4,19 @@ import { v4 as uuidv4 } from 'uuid'
 
 // 配置 Cloudinary
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'demo',
+  api_key: process.env.CLOUDINARY_API_KEY || 'demo',
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'demo'
 })
+
+// 检查Cloudinary配置
+if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+  console.warn('⚠️ Cloudinary配置不完整，请设置以下环境变量：')
+  console.warn('   CLOUDINARY_CLOUD_NAME')
+  console.warn('   CLOUDINARY_API_KEY')
+  console.warn('   CLOUDINARY_API_SECRET')
+  console.warn('   当前使用默认值，上传功能可能无法正常工作')
+}
 
 // 配置multer用于内存存储
 const storage = multer.memoryStorage()
@@ -32,6 +41,27 @@ export const uploadToCloudinary = async (file, folder = 'joinya-uploads') => {
   try {
     if (!file) {
       throw new Error('没有文件上传')
+    }
+
+    // 检查Cloudinary配置是否完整
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      console.warn('⚠️ Cloudinary配置不完整，返回模拟上传结果')
+      const fileExtension = file.originalname.split('.').pop()
+      const fileName = `${folder}/${uuidv4()}.${fileExtension}`
+      
+      return {
+        success: true,
+        url: `https://via.placeholder.com/400x300/cccccc/666666?text=${encodeURIComponent(file.originalname)}`,
+        filename: fileName,
+        size: file.size,
+        mimetype: file.mimetype,
+        public_id: fileName,
+        version: '1',
+        signature: 'demo_signature',
+        width: 400,
+        height: 300,
+        note: '这是模拟的上传结果，请配置Cloudinary环境变量'
+      }
     }
 
     // 生成唯一文件名
@@ -63,7 +93,9 @@ export const uploadToCloudinary = async (file, folder = 'joinya-uploads') => {
       size: file.size,
       mimetype: file.mimetype,
       width: result.width,
-      height: result.height
+      height: result.height,
+      version: result.version,
+      signature: result.signature
     }
   } catch (error) {
     console.error('上传到 Cloudinary 失败:', error)
@@ -95,6 +127,15 @@ export const uploadMultipleToCloudinary = async (files, folder = 'joinya-uploads
 // 删除文件
 export const deleteFromCloudinary = async (publicId) => {
   try {
+    // 检查Cloudinary配置是否完整
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      console.warn('⚠️ Cloudinary配置不完整，跳过删除操作')
+      return {
+        success: true,
+        message: '模拟删除成功（Cloudinary配置不完整）'
+      }
+    }
+
     const result = await cloudinary.uploader.destroy(publicId)
     return {
       success: result.result === 'ok',

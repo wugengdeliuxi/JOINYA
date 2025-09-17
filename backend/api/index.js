@@ -9,6 +9,12 @@ import mongoose from 'mongoose'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
+// 同步导入路由模块
+import authRoutes from './auth.js'
+import materialsRoutes from './materials.js'
+import productsRoutes from './products.js'
+import usersRoutes from './users.js'
+
 // 获取当前文件所在目录
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -45,38 +51,26 @@ async function connectDB() {
   }
 }
 
-// 异步初始化函数
-async function initializeApp() {
-  // 动态导入路由 - 在环境变量加载后导入
-  const { default: authRoutes } = await import('./auth.js')
-  const { default: materialsRoutes } = await import('./materials.js')
-  const { default: productsRoutes } = await import('./products.js')
-  const { default: usersRoutes } = await import('./users.js')
-
-  // 设置健康检查路由
-  app.get('/api/health', (req, res) => {
-    res.json({ 
-      status: 'ok', 
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV,
-      database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
-    })
+// 设置基础路由
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
   })
+})
 
-  // 根路径
-  app.get('/', (req, res) => {
-    res.json({
-      message: 'JOINYA Backend API Server',
-      version: '1.0.0',
-      status: 'running',
-      docs: '/api/health'
-    })
+// 根路径
+app.get('/', (req, res) => {
+  res.json({
+    message: 'JOINYA Backend API Server',
+    version: '1.0.0',
+    status: 'running',
+    docs: '/api/health'
   })
+})
 
-  return { authRoutes, materialsRoutes, productsRoutes, usersRoutes }
-}
-
-// 数据库连接将在 startApp() 中初始化
 
 // 中间件
 app.use(helmet())
@@ -177,14 +171,11 @@ async function startApp() {
     // 连接数据库
     await connectDB()
     
-    // 初始化路由
-    const routes = await initializeApp()
-    
-    // 设置API路由
-    app.use('/api/auth', routes.authRoutes)
-    app.use('/api/materials', routes.materialsRoutes)
-    app.use('/api/products', routes.productsRoutes)
-    app.use('/api/users', routes.usersRoutes)
+    // 设置API路由（使用同步导入）
+    app.use('/api/auth', authRoutes)
+    app.use('/api/materials', materialsRoutes)
+    app.use('/api/products', productsRoutes)
+    app.use('/api/users', usersRoutes)
     
     console.log('✅ API路由已设置:')
     console.log('   - /api/auth')
@@ -302,30 +293,19 @@ if (process.env.VERCEL) {
     })
   })
   
-  // 直接设置路由，不使用延迟
+  // 直接设置路由（同步）
   try {
-    // 使用Promise.all等待所有路由加载完成
-    Promise.all([
-      import('./auth.js'),
-      import('./materials.js'),
-      import('./products.js'),
-      import('./users.js')
-    ]).then(([authModule, materialsModule, productsModule, usersModule]) => {
-      // 设置所有路由
-      app.use('/api/auth', authModule.default)
-      app.use('/api/materials', materialsModule.default)
-      app.use('/api/products', productsModule.default)
-      app.use('/api/users', usersModule.default)
-      
-      console.log('✅ 所有API路由已设置完成')
-      console.log('   - /api/auth')
-      console.log('   - /api/materials (完整版本，包含upload)')
-      console.log('   - /api/products')
-      console.log('   - /api/users')
-    }).catch(err => {
-      console.error('❌ 路由设置失败:', err)
-      console.error('错误详情:', err.message)
-    })
+    // 设置所有路由
+    app.use('/api/auth', authRoutes)
+    app.use('/api/materials', materialsRoutes)
+    app.use('/api/products', productsRoutes)
+    app.use('/api/users', usersRoutes)
+    
+    console.log('✅ 所有API路由已设置完成')
+    console.log('   - /api/auth')
+    console.log('   - /api/materials (完整版本，包含upload)')
+    console.log('   - /api/products')
+    console.log('   - /api/users')
   } catch (error) {
     console.error('❌ Vercel环境：路由设置失败:', error)
   }
