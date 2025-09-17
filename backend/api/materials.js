@@ -3,6 +3,7 @@ import { body, query, validationResult } from 'express-validator'
 import Material from '../models/Material.js'
 import { auth, requireEditor } from '../middleware/auth.js'
 import { upload, uploadToBlob, uploadMultipleToBlob } from '../lib/upload.js'
+import { handleUploadError } from '../middleware/upload.js'
 
 const router = express.Router()
 

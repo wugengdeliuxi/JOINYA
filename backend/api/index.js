@@ -30,6 +30,11 @@ if (process.env.NODE_ENV !== 'production') {
 // 创建应用实例
 const app = express()
 
+// 在Vercel环境中信任代理
+if (process.env.VERCEL) {
+  app.set('trust proxy', true)
+}
+
 // 连接数据库
 async function connectDB() {
   try {
@@ -131,7 +136,12 @@ const limiter = rateLimit({
   max: 100, // 限制每个IP 15分钟内最多100个请求
   message: {
     error: '请求过于频繁，请稍后再试'
-  }
+  },
+  // 在Vercel环境中正确识别IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  // 信任代理设置
+  trustProxy: process.env.VERCEL ? true : false
 })
 app.use('/api/', limiter)
 
