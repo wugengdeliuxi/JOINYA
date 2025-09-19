@@ -11,7 +11,7 @@ export interface User {
 
 // 素材相关类型
 export interface Material {
-  id: string
+  _id: string
   name: string
   type: 'image' | 'video' | 'document'
   category: string

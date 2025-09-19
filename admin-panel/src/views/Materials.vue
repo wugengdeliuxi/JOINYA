@@ -271,8 +271,8 @@ const handleUpload = async () => {
       console.log(`  ${key}:`, value)
     }
 
-    const response = await apiClient.post<Material>('/materials/upload', formData, {
-      onUploadProgress: (progressEvent) => {
+    const response = await apiClient.post('/materials/upload', formData, {
+      onUploadProgress: (progressEvent: any) => {
         if (progressEvent.total) {
           uploadProgress.value = Math.round((progressEvent.loaded * 100) / progressEvent.total)
         }
@@ -330,7 +330,7 @@ const downloadMaterial = async (id: string) => {
     const response = await apiClient.get(`/materials/${id}/download`)
 
     if (response.success && response.data) {
-      const material = response.data
+      const material = response.data as any
       const downloadUrl = material.downloadUrl || material.url
 
       // 创建下载链接

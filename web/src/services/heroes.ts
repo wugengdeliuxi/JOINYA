@@ -1,5 +1,4 @@
 import api from './api'
-import type { ApiResponse } from '@/types'
 
 // 定义Hero素材类型
 export interface HeroMaterial {
