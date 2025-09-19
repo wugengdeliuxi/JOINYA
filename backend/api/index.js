@@ -45,22 +45,7 @@ if (process.env.VERCEL) {
 // 连接数据库
 async function connectDB() {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://joinya-admin:3AWc8DFZf7Papo5u@joinya-cluster.qpogy8c.mongodb.net/?retryWrites=true&w=majority&appName=joinya-cluster'
-    
-    // 针对免费版本优化连接选项，增加超时时间
-    const options = {
-      maxPoolSize: 1, // 限制连接池大小
-      serverSelectionTimeoutMS: 60000, // 60秒服务器选择超时
-      socketTimeoutMS: 60000, // 60秒Socket超时
-      connectTimeoutMS: 60000, // 60秒连接超时
-      bufferCommands: false, // 禁用命令缓冲
-      bufferMaxEntries: 0, // 禁用缓冲条目
-      retryWrites: true,
-      w: 'majority'
-    }
-
-    await mongoose.connect(mongoUri, options)
-    console.log('✅ MongoDB 连接成功')
+    await mongoose.connect('mongodb+srv://joinya-admin:3AWc8DFZf7Papo5u@joinya-cluster.qpogy8c.mongodb.net/?retryWrites=true&w=majority&appName=joinya-cluster')
   } catch (error) {
     console.error('❌ MongoDB 连接失败:', error.message)
     console.log('💡 请检查 .env 文件中的 MONGODB_URI 配置')
