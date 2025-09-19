@@ -50,15 +50,17 @@ router.get('/', [
       query.category = req.query.category
     }
 
-    // 执行查询
+    // 执行查询 - 针对免费版本增加超时时间
     const [materials, total] = await Promise.all([
       Material.find(query)
         .populate('uploadedBy', 'username')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .lean(),
+        .lean()
+        .maxTimeMS(60000), // 60秒超时
       Material.countDocuments(query)
+        .maxTimeMS(60000) // 60秒超时
     ])
 
     const totalPages = Math.ceil(total / limit)
@@ -185,8 +187,10 @@ router.post('/upload', auth, requireEditor, upload.single('file'), [
 router.get('/:id', async (req, res) => {
   try {
     const material = await Material.findById(req.params.id)
+      .maxTimeMS(60000) // 60秒超时
       .populate('uploadedBy', 'username')
       .lean()
+      .maxTimeMS(60000) // 60秒超时
 
     if (!material) {
       return res.status(404).json({
@@ -197,6 +201,7 @@ router.get('/:id', async (req, res) => {
 
     // 增加查看次数
     await Material.findByIdAndUpdate(req.params.id, { $inc: { viewCount: 1 } })
+      .maxTimeMS(60000) // 60秒超时
 
     res.json({
       success: true,
@@ -215,6 +220,7 @@ router.get('/:id', async (req, res) => {
 router.delete('/:id', auth, requireEditor, async (req, res) => {
   try {
     const material = await Material.findById(req.params.id)
+      .maxTimeMS(60000) // 60秒超时
 
     if (!material) {
       return res.status(404).json({
@@ -274,6 +280,7 @@ router.put('/:id', auth, requireEditor, [
     }
 
     const material = await Material.findById(req.params.id)
+      .maxTimeMS(60000) // 60秒超时
 
     if (!material) {
       return res.status(404).json({
@@ -320,8 +327,10 @@ router.put('/:id', auth, requireEditor, [
 router.get('/:id/download', async (req, res) => {
   try {
     const material = await Material.findById(req.params.id)
+      .maxTimeMS(60000) // 60秒超时
       .populate('uploadedBy', 'username')
       .lean()
+      .maxTimeMS(60000) // 60秒超时
 
     if (!material) {
       return res.status(404).json({

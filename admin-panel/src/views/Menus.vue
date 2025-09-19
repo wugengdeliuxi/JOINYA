@@ -93,7 +93,7 @@
     </div>
 
     <!-- 创建/编辑菜单对话框 -->
-    <el-dialog v-model="showCreateDialog" :title="editingMenu ? '编辑菜单' : '创建菜单'" width="80%" :close-on-click-modal="false">
+    <el-dialog v-model="showCreateDialog" :title="editingMenu ? '编辑菜单' : '创建菜单'" width="80%" :close-on-click-modal="false" destroy-on-close>
       <el-form ref="menuFormRef" :model="menuForm" :rules="menuRules" label-width="120px">
         <el-row :gutter="20">
           <el-col :span="12">

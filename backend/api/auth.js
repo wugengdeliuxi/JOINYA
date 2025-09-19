@@ -27,8 +27,9 @@ router.post('/login', [
     // 查找用户
     const user = await User.findOne({ 
       $or: [{ username }, { email: username }],
-      isActive: true 
+      isActive: true
     })
+      .maxTimeMS(60000) // 60秒超时
 
     if (!user) {
       return res.status(401).json({

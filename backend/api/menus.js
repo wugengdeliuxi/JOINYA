@@ -57,8 +57,10 @@ router.get('/', [
         .sort({ sortOrder: 1, createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .lean(),
+        .lean()
+        .maxTimeMS(60000), // 60秒超时
       Menu.countDocuments(query)
+        .maxTimeMS(60000) // 60秒超时
     ])
 
     const totalPages = Math.ceil(total / limit)
@@ -100,6 +102,7 @@ router.get('/:slug', [
       .populate('createdBy', 'username')
       .populate('updatedBy', 'username')
       .lean()
+      .maxTimeMS(60000) // 60秒超时
 
     if (!menu) {
       return res.status(404).json({
@@ -110,6 +113,7 @@ router.get('/:slug', [
 
     // 增加查看次数
     await Menu.findByIdAndUpdate(menu._id, { $inc: { viewCount: 1 } })
+      .maxTimeMS(60000) // 60秒超时
 
     res.json({
       success: true,
@@ -167,6 +171,7 @@ router.post('/', auth, requireEditor, [
 
     // 检查slug是否已存在
     const existingMenu = await Menu.findOne({ slug })
+      .maxTimeMS(60000) // 60秒超时
     if (existingMenu) {
       return res.status(400).json({
         success: false,
@@ -238,6 +243,7 @@ router.put('/:id', auth, requireEditor, [
     }
 
     const menu = await Menu.findById(req.params.id)
+      .maxTimeMS(60000) // 60秒超时
 
     if (!menu) {
       return res.status(404).json({
@@ -249,6 +255,7 @@ router.put('/:id', auth, requireEditor, [
     // 如果更新slug，检查是否与其他菜单冲突
     if (req.body.slug && req.body.slug !== menu.slug) {
       const existingMenu = await Menu.findOne({ slug: req.body.slug, _id: { $ne: req.params.id } })
+        .maxTimeMS(60000) // 60秒超时
       if (existingMenu) {
         return res.status(400).json({
           success: false,
@@ -304,6 +311,7 @@ router.delete('/:id', auth, requireEditor, [
     }
 
     const menu = await Menu.findById(req.params.id)
+      .maxTimeMS(60000) // 60秒超时
 
     if (!menu) {
       return res.status(404).json({
@@ -313,6 +321,7 @@ router.delete('/:id', auth, requireEditor, [
     }
 
     await Menu.findByIdAndDelete(req.params.id)
+      .maxTimeMS(60000) // 60秒超时
 
     res.json({
       success: true,
@@ -342,6 +351,7 @@ router.get('/type/:type', [
     }
 
     const menus = await Menu.findByType(req.params.type)
+      .maxTimeMS(60000) // 60秒超时
 
     res.json({
       success: true,
