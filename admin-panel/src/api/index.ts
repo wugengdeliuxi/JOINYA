@@ -6,7 +6,7 @@ const api = axios.create({
   baseURL: process.env.NODE_ENV === 'production' 
     ? '/api'  // 使用同域名代理
     : 'http://localhost:3002/api',
-  timeout: 10000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json'
   }
