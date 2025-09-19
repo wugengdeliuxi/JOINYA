@@ -12,7 +12,6 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -20,10 +19,6 @@ const router = useRouter()
 const goHome = () => {
   router.push('/')
 }
-
-onMounted(() => {
-  document.body.style.paddingTop = '120px'
-})
 </script>
 
 <style scoped>

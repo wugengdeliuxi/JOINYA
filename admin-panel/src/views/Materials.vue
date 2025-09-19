@@ -30,6 +30,7 @@
             <el-option label="产品图" value="product" />
             <el-option label="背景图" value="background" />
             <el-option label="Logo" value="logo" />
+            <el-option label="Hero" value="hero" />
             <el-option label="其他" value="other" />
           </el-select>
         </el-col>
@@ -43,7 +44,7 @@
     <!-- 素材列表 -->
     <div class="materials-grid">
       <el-row :gutter="20">
-        <el-col v-for="material in materials" :key="material.id" :xs="24" :sm="12" :md="8" :lg="6" :xl="4">
+        <el-col v-for="material in materials" :key="material._id" :xs="24" :sm="12" :md="8" :lg="6" :xl="4">
           <div class="material-card">
             <div class="material-preview">
               <img v-if="material.type === 'image'" :src="getThumbnailUrl(material)" :alt="material.name" @click="previewMaterial(material)" @error="handleImageError" />
@@ -69,11 +70,11 @@
                   <el-icon><Link /></el-icon>
                   复制链接
                 </el-button>
-                <el-button size="small" @click="downloadMaterial(material.id)">
+                <el-button size="small" @click="downloadMaterial(material._id)">
                   <el-icon><Download /></el-icon>
                   下载
                 </el-button>
-                <el-button size="small" type="danger" @click="deleteMaterial(material.id)">
+                <el-button size="small" type="danger" @click="deleteMaterial(material._id)">
                   <el-icon><Delete /></el-icon>
                   删除
                 </el-button>
@@ -109,6 +110,7 @@
             <el-option label="产品图" value="product" />
             <el-option label="背景图" value="background" />
             <el-option label="Logo" value="logo" />
+            <el-option label="Hero" value="hero" />
             <el-option label="其他" value="other" />
           </el-select>
         </el-form-item>

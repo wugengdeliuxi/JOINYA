@@ -11,14 +11,6 @@
           <div class="hero-text">
             <h1 class="hero-title">{{ $t('hero.title') }}</h1>
             <p class="hero-subtitle">{{ $t('hero.subtitle') }}</p>
-            <div class="hero-actions">
-              <el-button type="primary" size="large" class="btn-large">
-                {{ $t('hero.shopNow') }}
-              </el-button>
-              <el-button type="default" size="large" class="btn-large btn-secondary">
-                {{ $t('hero.learnMore') }}
-              </el-button>
-            </div>
           </div>
         </div>
       </div>
@@ -79,24 +71,21 @@
     </section>
 
     <!-- 产品Hero -->
-    <section class="product-hero">
+    <section class="product-hero" v-if="currentHero">
       <div class="product-hero-bg">
-        <video class="product-hero-video" autoplay muted loop playsinline>
-          <source src="@/assets/images/moving.mp4" type="video/mp4" />
-          <!-- 如果浏览器不支持视频，显示备用图片 -->
+        <!-- 动态媒体内容 -->
+        <video v-if="currentHero.type === 'video'" class="product-hero-video" autoplay muted loop playsinline>
+          <source :src="currentHero.url" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
+        <img v-else-if="currentHero.type === 'image'" :src="currentHero.url" :alt="currentHero.name" class="product-hero-image" />
         <div class="product-hero-overlay"></div>
       </div>
       <div class="container">
         <div class="product-hero-content">
           <div class="product-hero-text">
-            <h2>{{ $t('hero.fastestBike') }}</h2>
-            <p>{{ $t('hero.fastestBikeDesc') }}</p>
-            <div class="product-actions">
-              <el-button type="primary" size="large">购买 Aeroad</el-button>
-              <el-button type="default" size="large">了解更多</el-button>
-            </div>
+            <h2>{{ currentHero.name }}</h2>
+            <p>{{ currentHero.description }}</p>
           </div>
         </div>
       </div>
@@ -125,11 +114,12 @@
         <div class="categories-grid">
           <div class="category-card" v-for="category in categories" :key="category.name">
             <router-link :to="category.path" class="category-link">
-              <div class="category-image">
+              <div v-if="category.image" class="category-image">
                 <img :src="category.image" :alt="category.name" />
               </div>
               <div class="category-content">
                 <h3>{{ category.name }}</h3>
+                <p v-if="category.description">{{ category.description }}</p>
               </div>
             </router-link>
           </div>
@@ -214,51 +204,73 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BackgroundManager from '@/components/BackgroundManager.vue'
 import { Tools, Location, CreditCard, Trophy, Van, Star, Phone, Setting, Position, Box } from '@element-plus/icons-vue'
+import { heroesApi, type HeroMaterial } from '@/services/heroes'
+import { menusApi, type Menu } from '@/services/menus'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
-// 产品分类数据
-const categories = ref([
-  {
-    name: t('categories.roadBikes'),
-    path: '/road-bikes',
-    image: 'https://via.placeholder.com/400x300/000/fff?text=Road+Bikes'
-  },
-  {
-    name: t('categories.gravelBikes'),
-    path: '/gravel-bikes',
-    image: 'https://via.placeholder.com/400x300/333/fff?text=Gravel+Bikes'
-  },
-  {
-    name: t('categories.mountainBikes'),
-    path: '/mountain-bikes',
-    image: 'https://via.placeholder.com/400x300/666/fff?text=Mountain+Bikes'
-  },
-  {
-    name: t('categories.eBikes'),
-    path: '/e-bikes',
-    image: 'https://via.placeholder.com/400x300/999/fff?text=E-Bikes'
-  },
-  {
-    name: t('categories.gear'),
-    path: '/gear',
-    image: 'https://via.placeholder.com/400x300/ccc/000?text=Gear'
-  },
-  {
-    name: t('categories.sale'),
-    path: '/sale',
-    image: 'https://via.placeholder.com/400x300/f00/fff?text=Sale'
+// Hero素材数据
+const heroMaterials = ref<HeroMaterial[]>([])
+const currentHero = ref<HeroMaterial | null>(null)
+
+// 产品分类数据（从动态菜单获取）
+const categories = ref<
+  Array<{
+    name: string
+    path: string
+    image: string
+    description?: string
+  }>
+>([])
+
+// 获取动态菜单数据
+const fetchDynamicMenus = async () => {
+  try {
+    const response = await menusApi.getMenus({
+      isActive: true,
+      limit: 20
+    })
+    if (response.success) {
+      // 将菜单转换为categories格式
+      categories.value = response.data.map((menu: Menu) => ({
+        name: locale.value === 'zh-cn' ? menu.content.zh.title : menu.content.en.title,
+        path: `/${menu.slug}`,
+        image: menu.coverImage || '',
+        description: locale.value === 'zh-cn' ? menu.content.zh.description : menu.content.en.description
+      }))
+    }
+  } catch (error) {
+    console.warn('获取动态菜单失败:', error)
   }
-])
+}
 
+// 获取Hero素材数据
+const fetchHeroMaterials = async () => {
+  try {
+    const response = await heroesApi.getHeroes()
+    if (response.success && response.data.length > 0) {
+      heroMaterials.value = response.data
+      // 使用第一个Hero作为当前显示的Hero
+      currentHero.value = response.data[0]
+    }
+  } catch (error) {
+    console.warn('获取Hero素材失败:', error)
+  }
+}
+
+// 监听语言变化
+watch(locale, () => {
+  fetchDynamicMenus()
+})
+
+// 组件挂载时获取数据
 onMounted(() => {
-  console.log('页面加载完成')
-  // 页面加载完成后的处理
-  document.body.style.paddingTop = '120px' // 为固定导航栏留出空间
+  fetchHeroMaterials()
+  fetchDynamicMenus()
 })
 </script>
 
@@ -316,13 +328,6 @@ onMounted(() => {
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
-}
-
-.hero-actions {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  flex-wrap: wrap;
 }
 
 /* 滚动特色文字 - 悬浮在Hero底部 */
@@ -397,7 +402,8 @@ onMounted(() => {
   z-index: 1;
 }
 
-.product-hero-video {
+.product-hero-video,
+.product-hero-image {
   position: absolute;
   top: 0;
   left: 0;
@@ -432,12 +438,6 @@ onMounted(() => {
   font-size: 1.25rem;
   margin-bottom: 2rem;
   opacity: 0.9;
-}
-
-.product-actions {
-  display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
 }
 
 /* 产品分类 */

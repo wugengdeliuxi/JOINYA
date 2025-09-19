@@ -9,14 +9,6 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-
-const route = useRoute()
-
-onMounted(() => {
-  document.body.style.paddingTop = '120px'
-})
 </script>
 
 <style scoped>

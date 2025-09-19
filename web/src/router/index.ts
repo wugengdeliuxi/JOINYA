@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
+import { getDynamicRoutes, clearRouteCache } from '@/utils/routeManager'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -10,68 +11,21 @@ const routes: RouteRecordRaw[] = [
       title: '首页'
     }
   },
-  {
-    path: '/road-bikes',
-    name: 'roadBikes',
-    component: () => import('@/views/RoadBikes.vue'),
-    meta: {
-      title: '公路车'
-    }
-  },
-  {
-    path: '/gravel-bikes',
-    name: 'gravelBikes',
-    component: () => import('@/views/GravelBikes.vue'),
-    meta: {
-      title: '砾石车'
-    }
-  },
-  {
-    path: '/mountain-bikes',
-    name: 'mountainBikes',
-    component: () => import('@/views/MountainBikes.vue'),
-    meta: {
-      title: '山地车'
-    }
-  },
-  {
-    path: '/e-bikes',
-    name: 'eBikes',
-    component: () => import('@/views/EBikes.vue'),
-    meta: {
-      title: '电助力自行车'
-    }
-  },
-  {
-    path: '/gear',
-    name: 'gear',
-    component: () => import('@/views/Gear.vue'),
-    meta: {
-      title: '装备'
-    }
-  },
-  {
-    path: '/sale',
-    name: 'sale',
-    component: () => import('@/views/Sale.vue'),
-    meta: {
-      title: '特惠'
-    }
-  },
-  {
-    path: '/service',
-    name: 'service',
-    component: () => import('@/views/Service.vue'),
-    meta: {
-      title: '服务'
-    }
-  },
+  // 动态菜单路由将在运行时添加
   {
     path: '/product/:id',
     name: 'productDetail',
     component: () => import('@/views/ProductDetail.vue'),
     meta: {
       title: '产品详情'
+    }
+  },
+  {
+    path: '/menu/:slug',
+    name: 'menuPage',
+    component: () => import('@/views/MenuPage.vue'),
+    meta: {
+      title: '菜单页面'
     }
   },
   {
@@ -96,12 +50,48 @@ const router = createRouter({
   }
 })
 
+// 动态添加菜单路由
+export const setupDynamicRoutes = async () => {
+  try {
+    const dynamicRoutes = await getDynamicRoutes()
+    
+    // 添加动态路由到路由器
+    dynamicRoutes.forEach(route => {
+      if (!router.hasRoute(route.name)) {
+        router.addRoute(route)
+      }
+    })
+    
+    console.log('动态路由加载完成:', dynamicRoutes.length, '个菜单路由')
+  } catch (error) {
+    console.error('设置动态路由失败:', error)
+  }
+}
+
+// 重新加载动态路由（当菜单更新时调用）
+export const reloadDynamicRoutes = async () => {
+  clearRouteCache()
+  await setupDynamicRoutes()
+}
+
 // 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   // 设置页面标题
   if (to.meta?.title) {
     document.title = `${to.meta.title} - JOINYA`
   }
+
+  // 检查是否是动态菜单路由（不是根路径且不是已知的静态路由）
+  const staticRoutes = ['/', '/product', '/search']
+  const isStaticRoute = staticRoutes.some(route => to.path.startsWith(route))
+  
+  if (!isStaticRoute && !router.hasRoute(to.name || '')) {
+    // 检测到动态路由不存在，直接重定向到主页
+    console.log('检测到动态路由不存在，重定向到主页:', to.path)
+    next('/')
+    return
+  }
+
   next()
 })
 

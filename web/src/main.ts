@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import router from './router'
+import router, { setupDynamicRoutes } from './router'
 import { createI18n } from 'vue-i18n'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
@@ -9,6 +9,7 @@ import en from 'element-plus/es/locale/lang/en'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import App from './App.vue'
 import '@/assets/styles/global.css'
+import { menuWatcher } from '@/utils/menuWatcher'
 
 // 导入语言文件
 import zhCnMessages from '@/locales/zh-cn.json'
@@ -40,4 +41,13 @@ app.use(ElementPlus, {
   locale: zhCn
 })
 
-app.mount('#app') 
+// 设置动态路由
+setupDynamicRoutes().then(() => {
+  app.mount('#app')
+  
+  // 启动菜单更新监听
+  menuWatcher.startWatching()
+}).catch((error) => {
+  console.error('动态路由设置失败:', error)
+  app.mount('#app')
+}) 

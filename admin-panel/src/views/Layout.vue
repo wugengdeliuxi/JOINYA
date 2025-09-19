@@ -12,14 +12,14 @@
           <span>素材管理</span>
         </el-menu-item>
 
-        <el-menu-item index="/products">
-          <el-icon><Goods /></el-icon>
-          <span>产品管理</span>
-        </el-menu-item>
-
         <el-menu-item index="/users">
           <el-icon><User /></el-icon>
           <span>用户管理</span>
+        </el-menu-item>
+
+        <el-menu-item index="/menus">
+          <el-icon><Menu /></el-icon>
+          <span>菜单管理</span>
         </el-menu-item>
 
         <el-menu-item index="/settings">
@@ -94,6 +94,7 @@ const currentPageTitle = computed(() => {
     '/materials': '素材管理',
     '/products': '产品管理',
     '/users': '用户管理',
+    '/menus': '菜单管理',
     '/settings': '系统设置'
   }
   return routeMap[route.path] || '素材管理'

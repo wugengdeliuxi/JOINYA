@@ -17,7 +17,16 @@
     "tracking": "订单跟踪",
     "returns": "退货",
     "warranty": "质保",
-    "support": "支持"
+    "support": "支持",
+    "home": "首页"
+  },
+  "menu": {
+    "tags": "标签",
+    "views": "次浏览",
+    "notFound": "页面未找到",
+    "notFoundDesc": "抱歉，您访问的页面不存在或已被删除。",
+    "backHome": "返回首页",
+    "redirecting": "正在自动跳转到首页..."
   },
   "hero": {
     "title": "世界级公路车、砾石车和山地车",

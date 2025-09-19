@@ -15,7 +15,7 @@ const materialSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ['product', 'background', 'logo', 'other']
+    enum: ['product', 'background', 'logo', 'hero', 'other']
   },
   url: {
     type: String,

@@ -28,5 +28,6 @@ import FooterNav from '@/components/layout/FooterNav.vue'
 .main-content {
   flex: 1;
   overflow-x: hidden;
+  margin-top: 76px;
 }
 </style> 

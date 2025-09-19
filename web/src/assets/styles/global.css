@@ -26,11 +26,6 @@ body {
   padding: 0 20px;
 }
 
-.container-fluid {
-  width: 100%;
-  padding: 0 20px;
-}
-
 /* 响应式网格系统 */
 .row {
   display: flex;
@@ -323,12 +318,6 @@ img {
 ::selection {
   background-color: #007bff;
   color: #fff;
-}
-
-/* 焦点样式 */
-:focus {
-  outline: 2px solid #007bff;
-  outline-offset: 2px;
 }
 
 /* 无障碍 */

@@ -1,32 +1,5 @@
 <template>
   <header class="header-nav">
-    <!-- 顶部信息栏 -->
-    <div class="top-bar">
-      <div class="container">
-        <div class="top-bar-content">
-          <div class="top-bar-links">
-            <el-link :underline="false" class="top-link">{{ $t('nav.findYourBike') }}</el-link>
-            <el-link :underline="false" class="top-link">{{ $t('nav.size') }}</el-link>
-          </div>
-          <div class="top-bar-right">
-            <el-dropdown @command="handleLanguageChange" trigger="click">
-              <span class="language-selector">
-                <el-icon><Operation /></el-icon>
-                {{ currentLanguage }}
-                <el-icon><ArrowDown /></el-icon>
-              </span>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="zh-cn">中文</el-dropdown-item>
-                  <el-dropdown-item command="en">English</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- 主导航栏 -->
     <nav class="main-nav">
       <div class="container">
@@ -38,30 +11,40 @@
 
           <!-- 主菜单 -->
           <div class="nav-menu" :class="{ 'mobile-open': mobileMenuOpen }">
-            <router-link to="/road-bikes" class="nav-link">{{ $t('nav.roadBikes') }}</router-link>
-            <router-link to="/gravel-bikes" class="nav-link">{{ $t('nav.gravelBikes') }}</router-link>
-            <router-link to="/mountain-bikes" class="nav-link">{{ $t('nav.mountainBikes') }}</router-link>
-            <router-link to="/e-bikes" class="nav-link">{{ $t('nav.eBikes') }}</router-link>
-            <router-link to="/gear" class="nav-link">{{ $t('nav.gear') }}</router-link>
-            <router-link to="/sale" class="nav-link sale-link">{{ $t('nav.sale') }}</router-link>
-            <router-link to="/service" class="nav-link">{{ $t('nav.service') }}</router-link>
+            <router-link v-for="menu in dynamicMenus" :key="menu._id" :to="`/${menu.slug}`" class="nav-link" :class="{ 'sale-link': menu.type === 'sale' }">
+              {{ getMenuTitle(menu) }}
+            </router-link>
           </div>
 
           <!-- 右侧工具栏 -->
           <div class="nav-tools">
             <!-- 搜索 -->
-            <el-button type="text" @click="showSearch = !showSearch" class="tool-btn">
+            <!-- <el-button type="text" @click="showSearch = !showSearch" class="tool-btn">
               <el-icon><Search /></el-icon>
-            </el-button>
+            </el-button> -->
+
+            <!-- 语言切换 -->
+            <el-dropdown @command="handleLanguageChange" trigger="click" class="language-dropdown">
+              <el-button type="text" class="tool-btn language-btn">
+                <el-icon><Operation /></el-icon>
+                <span class="language-text">{{ currentLanguage }}</span>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="zh-cn">中文</el-dropdown-item>
+                  <el-dropdown-item command="en">English</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
 
             <!-- 登录 -->
-            <el-button type="text" class="tool-btn">
+            <!-- <el-button type="text" class="tool-btn">
               <el-icon><User /></el-icon>
-            </el-button>
+            </el-button> -->
 
             <!-- 移动端菜单按钮 -->
             <el-button type="text" class="mobile-menu-btn" @click="mobileMenuOpen = !mobileMenuOpen">
-              <el-icon><Menu /></el-icon>
+              <el-icon><MenuIcon /></el-icon>
             </el-button>
           </div>
         </div>
@@ -92,8 +75,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { Search, Menu, Operation, Close, User } from '@element-plus/icons-vue'
+import { Search, Menu as MenuIcon, Operation, Close, User, ArrowDown } from '@element-plus/icons-vue'
 import { materialsApi } from '@/services/materials'
+import { menusApi, type Menu } from '@/services/menus'
+import { menuWatcher } from '@/utils/menuWatcher'
 
 const { locale, t } = useI18n()
 const router = useRouter()
@@ -102,10 +87,16 @@ const mobileMenuOpen = ref(false)
 const showSearch = ref(false)
 const searchQuery = ref('')
 const logoUrl = ref('')
+const dynamicMenus = ref<Menu[]>([])
 
 const currentLanguage = computed(() => {
   return locale.value === 'zh-cn' ? '中文' : 'English'
 })
+
+// 获取菜单标题
+const getMenuTitle = (menu: Menu) => {
+  return locale.value === 'zh-cn' ? menu.content.zh.title : menu.content.en.title
+}
 
 const handleLanguageChange = (language: string) => {
   locale.value = language
@@ -133,6 +124,22 @@ const fetchLogo = async () => {
   }
 }
 
+// 获取动态菜单
+const fetchDynamicMenus = async () => {
+  try {
+    const response = await menusApi.getMenus({
+      isActive: true,
+      limit: 20
+    })
+    if (response.success) {
+      // 按排序字段排序
+      dynamicMenus.value = response.data.sort((a: Menu, b: Menu) => a.sortOrder - b.sortOrder)
+    }
+  } catch (error) {
+    console.warn('获取动态菜单失败:', error)
+  }
+}
+
 // Logo加载错误处理
 const handleLogoError = () => {
   logoUrl.value = ''
@@ -143,9 +150,15 @@ router.afterEach(() => {
   mobileMenuOpen.value = false
 })
 
-// 组件挂载时获取logo
+// 组件挂载时获取logo和菜单
 onMounted(() => {
   fetchLogo()
+  fetchDynamicMenus()
+
+  // 监听菜单更新
+  menuWatcher.onUpdate(() => {
+    fetchDynamicMenus()
+  })
 })
 </script>
 
@@ -160,53 +173,29 @@ onMounted(() => {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
-.top-bar {
-  background: #f8f9fa;
-  padding: 8px 0;
-  font-size: 14px;
-}
-
-.top-bar-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.top-bar-links {
-  display: flex;
-  gap: 20px;
-}
-
-.top-link {
-  color: #666;
-  font-size: 13px;
-  transition: color 0.3s ease;
-}
-
-.top-link:hover {
-  color: #000;
-}
-
-.top-bar-right {
+/* 语言切换按钮样式 */
+.language-dropdown {
   display: flex;
   align-items: center;
 }
 
-.language-selector {
+.language-btn {
   display: flex;
   align-items: center;
   gap: 5px;
-  cursor: pointer;
-  color: #666;
-  font-size: 13px;
-  padding: 5px 10px;
-  border-radius: 4px;
+  padding: 8px 12px !important;
+  border-radius: 6px !important;
   transition: all 0.3s ease;
 }
 
-.language-selector:hover {
-  background: #e9ecef;
-  color: #000;
+.language-btn:hover {
+  background-color: #f5f5f5;
+}
+
+.language-text {
+  font-size: 13px;
+  color: #333;
+  font-weight: 500;
 }
 
 .main-nav {
@@ -320,10 +309,6 @@ onMounted(() => {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .top-bar {
-    display: none;
-  }
-
   .nav-menu {
     position: fixed;
     top: 100%;
@@ -355,6 +340,14 @@ onMounted(() => {
 
   .mobile-menu-btn {
     display: block;
+  }
+
+  .language-text {
+    display: none;
+  }
+
+  .language-btn {
+    padding: 8px !important;
   }
 }
 

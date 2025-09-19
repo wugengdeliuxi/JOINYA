@@ -8,11 +8,6 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-
-onMounted(() => {
-  document.body.style.paddingTop = '120px'
-})
 </script>
 
 <style scoped>

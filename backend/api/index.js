@@ -14,6 +14,7 @@ import authRoutes from './auth.js'
 import materialsRoutes from './materials.js'
 import productsRoutes from './products.js'
 import usersRoutes from './users.js'
+import menusRoutes from './menus.js'
 
 // 获取当前文件所在目录
 const __filename = fileURLToPath(import.meta.url)
@@ -122,7 +123,7 @@ if (!process.env.VERCEL) {
 // 速率限制
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15分钟
-  max: 100, // 限制每个IP 15分钟内最多100个请求
+  max: 1000, // 限制每个IP 15分钟内最多100个请求
   message: {
     error: '请求过于频繁，请稍后再试'
   },
@@ -176,6 +177,7 @@ async function startApp() {
     app.use('/api/materials', materialsRoutes)
     app.use('/api/products', productsRoutes)
     app.use('/api/users', usersRoutes)
+    app.use('/api/menus', menusRoutes)
     
     console.log('✅ API路由已设置:')
     console.log('   - /api/auth')
@@ -300,6 +302,7 @@ if (process.env.VERCEL) {
     app.use('/api/materials', materialsRoutes)
     app.use('/api/products', productsRoutes)
     app.use('/api/users', usersRoutes)
+    app.use('/api/menus', menusRoutes)
     
     console.log('✅ 所有API路由已设置完成')
     console.log('   - /api/auth')

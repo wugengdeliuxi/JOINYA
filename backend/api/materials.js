@@ -18,7 +18,7 @@ router.get('/', [
   }).withMessage('无效的素材类型'),
   query('category').optional().custom((value) => {
     if (value === '' || value === undefined) return true
-    return ['product', 'background', 'logo', 'other'].includes(value)
+    return ['product', 'background', 'logo', 'hero', 'other'].includes(value)
   }).withMessage('无效的分类')
 ], async (req, res) => {
   try {
@@ -85,7 +85,7 @@ router.get('/', [
 // 上传素材
 router.post('/upload', auth, requireEditor, upload.single('file'), [
   body('name').trim().isLength({ min: 1, max: 100 }).withMessage('素材名称长度必须在1-100字符之间'),
-  body('category').isIn(['product', 'background', 'logo', 'other']).withMessage('无效的分类'),
+  body('category').isIn(['product', 'background', 'logo', 'hero', 'other']).withMessage('无效的分类'),
   body('description').optional().trim().isLength({ max: 500 }).withMessage('描述不能超过500字符'),
   body('tags').optional().isString().withMessage('标签格式错误')
 ], async (req, res) => {
@@ -358,6 +358,24 @@ router.get('/:id/download', async (req, res) => {
       success: false,
       message: '服务器错误'
     })
+  }
+})
+
+// 获取Hero素材
+router.get('/heroes', async (req, res) => {
+  try {
+    const heroes = await Material.find({ 
+      category: 'hero', 
+      isPublic: true 
+    }).sort({ createdAt: -1 }).lean()
+    
+    res.json({
+      success: true,
+      data: heroes
+    })
+  } catch (error) {
+    console.error('获取Hero失败:', error)
+    res.status(500).json({ success: false, message: '服务器错误' })
   }
 })
 
