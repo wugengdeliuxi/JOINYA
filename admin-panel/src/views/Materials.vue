@@ -271,13 +271,7 @@ const handleUpload = async () => {
       console.log(`  ${key}:`, value)
     }
 
-    const response = await apiClient.post('/materials/upload', formData, {
-      onUploadProgress: (progressEvent: any) => {
-        if (progressEvent.total) {
-          uploadProgress.value = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-        }
-      }
-    })
+    const response = await apiClient.post('/materials/upload', formData)
 
     if (response.success) {
       ElMessage.success('上传成功')
