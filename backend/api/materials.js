@@ -163,6 +163,21 @@ router.post('/upload', auth, requireEditor, upload.single('file'), [
   }
 })
 
+// 获取Hero素材（必须在 /:id 路由之前）
+router.get('/heroes', async (req, res) => {
+  try {
+    const heroes = await Material.getHeroes()
+    
+    res.json({
+      success: true,
+      data: heroes
+    })
+  } catch (error) {
+    console.error('获取Hero失败:', error)
+    res.status(500).json({ success: false, message: '服务器错误' })
+  }
+})
+
 // 获取单个素材
 router.get('/:id', async (req, res) => {
   try {
@@ -339,21 +354,6 @@ router.get('/:id/download', async (req, res) => {
       success: false,
       message: '服务器错误'
     })
-  }
-})
-
-// 获取Hero素材
-router.get('/heroes', async (req, res) => {
-  try {
-    const heroes = await Material.getHeroes()
-    
-    res.json({
-      success: true,
-      data: heroes
-    })
-  } catch (error) {
-    console.error('获取Hero失败:', error)
-    res.status(500).json({ success: false, message: '服务器错误' })
   }
 })
 
