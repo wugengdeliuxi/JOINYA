@@ -1,6 +1,6 @@
 import express from 'express'
 import { body, query, param, validationResult } from 'express-validator'
-import Menu from '../models/Menu.js'
+import { Menu } from '../models/Menu.js'
 import { auth, requireEditor } from '../middleware/auth.js'
 
 const router = express.Router()
@@ -30,49 +30,26 @@ router.get('/', [
     const limit = parseInt(req.query.limit) || 12
     const skip = (page - 1) * limit
 
-    // 构建查询条件
-    const query = {}
-    
-    if (req.query.type && req.query.type.trim()) {
-      query.type = req.query.type
-    }
-    
-    if (req.query.isActive !== undefined) {
-      query.isActive = req.query.isActive === 'true'
-    }
-    
-    if (req.query.keyword && req.query.keyword.trim()) {
-      query.$or = [
-        { 'content.zh.title': { $regex: req.query.keyword, $options: 'i' } },
-        { 'content.en.title': { $regex: req.query.keyword, $options: 'i' } },
-        { name: { $regex: req.query.keyword, $options: 'i' } }
-      ]
+    // 构建查询选项
+    const options = {
+      page,
+      limit,
+      type: req.query.type && req.query.type.trim() ? req.query.type.trim() : undefined,
+      isActive: req.query.isActive !== undefined ? req.query.isActive === 'true' : undefined,
+      keyword: req.query.keyword && req.query.keyword.trim() ? req.query.keyword.trim() : undefined
     }
 
     // 执行查询
-    const [menus, total] = await Promise.all([
-      Menu.find(query)
-        .populate('createdBy', 'username')
-        .populate('updatedBy', 'username')
-        .sort({ sortOrder: 1, createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean()
-        .maxTimeMS(60000), // 60秒超时
-      Menu.countDocuments(query)
-        .maxTimeMS(60000) // 60秒超时
-    ])
-
-    const totalPages = Math.ceil(total / limit)
+    const result = await Menu.findMany(options)
 
     res.json({
       success: true,
-      data: menus,
+      data: result.data,
       pagination: {
-        page,
-        limit,
-        total,
-        totalPages
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages
       }
     })
   } catch (error) {
@@ -99,10 +76,6 @@ router.get('/:slug', [
     }
 
     const menu = await Menu.findBySlug(req.params.slug)
-      .populate('createdBy', 'username')
-      .populate('updatedBy', 'username')
-      .lean()
-      .maxTimeMS(60000) // 60秒超时
 
     if (!menu) {
       return res.status(404).json({
@@ -112,8 +85,7 @@ router.get('/:slug', [
     }
 
     // 增加查看次数
-    await Menu.findByIdAndUpdate(menu._id, { $inc: { viewCount: 1 } })
-      .maxTimeMS(60000) // 60秒超时
+    await menu.incrementViewCount()
 
     res.json({
       success: true,
@@ -170,8 +142,7 @@ router.post('/', auth, requireEditor, [
     } = req.body
 
     // 检查slug是否已存在
-    const existingMenu = await Menu.findOne({ slug })
-      .maxTimeMS(60000) // 60秒超时
+    const existingMenu = await Menu.findBySlug(slug)
     if (existingMenu) {
       return res.status(400).json({
         success: false,
@@ -180,22 +151,20 @@ router.post('/', auth, requireEditor, [
     }
 
     // 创建菜单
-    const menu = new Menu({
+    const menuData = {
       name,
       slug,
       type,
       content,
-      sortOrder,
-      isActive,
-      coverImage,
+      sort_order: sortOrder,
+      is_active: isActive,
+      cover_image: coverImage,
       tags,
-      createdBy: req.user._id,
-      updatedBy: req.user._id
-    })
+      created_by: req.user.id,
+      updated_by: req.user.id
+    }
 
-    await menu.save()
-    await menu.populate('createdBy', 'username')
-    await menu.populate('updatedBy', 'username')
+    const menu = await Menu.create(menuData)
 
     res.status(201).json({
       success: true,
@@ -243,7 +212,6 @@ router.put('/:id', auth, requireEditor, [
     }
 
     const menu = await Menu.findById(req.params.id)
-      .maxTimeMS(60000) // 60秒超时
 
     if (!menu) {
       return res.status(404).json({
@@ -254,9 +222,8 @@ router.put('/:id', auth, requireEditor, [
 
     // 如果更新slug，检查是否与其他菜单冲突
     if (req.body.slug && req.body.slug !== menu.slug) {
-      const existingMenu = await Menu.findOne({ slug: req.body.slug, _id: { $ne: req.params.id } })
-        .maxTimeMS(60000) // 60秒超时
-      if (existingMenu) {
+      const existingMenu = await Menu.findBySlug(req.body.slug)
+      if (existingMenu && existingMenu.id !== req.params.id) {
         return res.status(400).json({
           success: false,
           message: '该slug已存在，请使用其他slug'
@@ -264,23 +231,29 @@ router.put('/:id', auth, requireEditor, [
       }
     }
 
-    // 更新字段
+    // 构建更新数据
+    const updateData = {}
     const updateFields = ['name', 'slug', 'type', 'content', 'sortOrder', 'isActive', 'coverImage', 'tags']
     updateFields.forEach(field => {
       if (req.body[field] !== undefined) {
         if (field === 'content') {
           // 合并内容对象
-          menu.content = { ...menu.content, ...req.body.content }
+          updateData.content = { ...menu.content, ...req.body.content }
+        } else if (field === 'sortOrder') {
+          updateData.sort_order = req.body[field]
+        } else if (field === 'isActive') {
+          updateData.is_active = req.body[field]
+        } else if (field === 'coverImage') {
+          updateData.cover_image = req.body[field]
         } else {
-          menu[field] = req.body[field]
+          updateData[field] = req.body[field]
         }
       }
     })
 
-    menu.updatedBy = req.user._id
-    await menu.save()
-    await menu.populate('createdBy', 'username')
-    await menu.populate('updatedBy', 'username')
+    updateData.updated_by = req.user.id
+
+    await menu.update(updateData)
 
     res.json({
       success: true,
@@ -311,7 +284,6 @@ router.delete('/:id', auth, requireEditor, [
     }
 
     const menu = await Menu.findById(req.params.id)
-      .maxTimeMS(60000) // 60秒超时
 
     if (!menu) {
       return res.status(404).json({
@@ -320,8 +292,7 @@ router.delete('/:id', auth, requireEditor, [
       })
     }
 
-    await Menu.findByIdAndDelete(req.params.id)
-      .maxTimeMS(60000) // 60秒超时
+    await menu.delete()
 
     res.json({
       success: true,
@@ -351,7 +322,6 @@ router.get('/type/:type', [
     }
 
     const menus = await Menu.findByType(req.params.type)
-      .maxTimeMS(60000) // 60秒超时
 
     res.json({
       success: true,
@@ -385,12 +355,15 @@ router.put('/batch/sort', auth, requireEditor, [
     const { menus } = req.body
 
     // 批量更新排序
-    const updatePromises = menus.map(menu => 
-      Menu.findByIdAndUpdate(menu.id, { 
-        sortOrder: menu.sortOrder,
-        updatedBy: req.user._id
-      })
-    )
+    const updatePromises = menus.map(async menu => {
+      const menuObj = await Menu.findById(menu.id)
+      if (menuObj) {
+        return menuObj.update({
+          sort_order: menu.sortOrder,
+          updated_by: req.user.id
+        })
+      }
+    })
 
     await Promise.all(updatePromises)
 

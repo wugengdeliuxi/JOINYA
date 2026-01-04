@@ -5,7 +5,7 @@ import morgan from 'morgan'
 import compression from 'compression'
 import rateLimit from 'express-rate-limit'
 import dotenv from 'dotenv'
-import mongoose from 'mongoose'
+import { checkSupabaseConnection } from '../lib/supabase.js'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -42,23 +42,28 @@ if (process.env.VERCEL) {
   app.set('trust proxy', true)
 }
 
-// 连接数据库
+// 连接 Supabase 数据库
 async function connectDB() {
   try {
-    await mongoose.connect('mongodb+srv://joinya-admin:3AWc8DFZf7Papo5u@joinya-cluster.qpogy8c.mongodb.net/?retryWrites=true&w=majority&appName=joinya-cluster')
+    const isConnected = await checkSupabaseConnection()
+    if (isConnected) {
+      console.log('✅ Supabase 连接成功')
+    } else {
+      console.log('❌ Supabase 连接失败')
+    }
   } catch (error) {
-    console.error('❌ MongoDB 连接失败:', error.message)
-    console.log('💡 请检查 .env 文件中的 MONGODB_URI 配置')
+    console.error('❌ Supabase 连接错误:', error.message)
   }
 }
 
 // 设置基础路由
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  const dbStatus = await checkSupabaseConnection()
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
-    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    database: dbStatus ? 'connected' : 'disconnected'
   })
 })
 

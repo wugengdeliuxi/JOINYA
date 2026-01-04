@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken'
-import User from '../models/User.js'
+import { User } from '../models/User.js'
 
 export const auth = async (req, res, next) => {
   try {
@@ -13,9 +13,9 @@ export const auth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    const user = await User.findById(decoded.userId).select('-password')
+    const user = await User.findById(decoded.userId)
     
-    if (!user || !user.isActive) {
+    if (!user || !user.is_active) {
       return res.status(401).json({
         success: false,
         message: '用户不存在或已被禁用'

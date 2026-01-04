@@ -1,6 +1,6 @@
 import express from 'express'
 import { body, query, validationResult } from 'express-validator'
-import Material from '../models/Material.js'
+import { Material } from '../models/Material.js'
 import { auth, requireEditor } from '../middleware/auth.js'
 import { upload, uploadToCloudinary, uploadMultipleToCloudinary, deleteFromCloudinary } from '../lib/upload-cloudinary.js'
 import { handleUploadError } from '../middleware/upload.js'
@@ -35,44 +35,26 @@ router.get('/', [
     const limit = parseInt(req.query.limit) || 12
     const skip = (page - 1) * limit
 
-    // 构建查询条件
-    const query = { isPublic: true }
-    
-    if (req.query.keyword && req.query.keyword.trim()) {
-      query.$text = { $search: req.query.keyword }
-    }
-    
-    if (req.query.type && req.query.type.trim()) {
-      query.type = req.query.type
-    }
-    
-    if (req.query.category && req.query.category.trim()) {
-      query.category = req.query.category
+    // 构建查询选项
+    const options = {
+      page,
+      limit,
+      keyword: req.query.keyword && req.query.keyword.trim() ? req.query.keyword.trim() : undefined,
+      type: req.query.type && req.query.type.trim() ? req.query.type.trim() : undefined,
+      category: req.query.category && req.query.category.trim() ? req.query.category.trim() : undefined
     }
 
-    // 执行查询 - 针对免费版本增加超时时间
-    const [materials, total] = await Promise.all([
-      Material.find(query)
-        .populate('uploadedBy', 'username')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean()
-        .maxTimeMS(60000), // 60秒超时
-      Material.countDocuments(query)
-        .maxTimeMS(60000) // 60秒超时
-    ])
-
-    const totalPages = Math.ceil(total / limit)
+    // 执行查询
+    const result = await Material.findMany(options)
 
     res.json({
       success: true,
-      data: materials,
+      data: result.data,
       pagination: {
-        page,
-        limit,
-        total,
-        totalPages
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages
       }
     })
   } catch (error) {
@@ -148,26 +130,24 @@ router.post('/upload', auth, requireEditor, upload.single('file'), [
     const fileUrl = uploadResult.url
 
     // 创建素材记录
-    const material = new Material({
+    const materialData = {
       name,
       type,
       category,
       url: fileUrl,
       size: file.size,
-      mimeType: file.mimetype,
+      mime_type: file.mimetype,
       description: description || '',
       tags: tagArray,
-      uploadedBy: req.user._id,
+      uploaded_by: req.user.id,
+      is_public: true,
       // 保存Cloudinary信息
-      cloudinaryPublicId: uploadResult.public_id,
-      cloudinaryVersion: uploadResult.version,
-      cloudinarySignature: uploadResult.signature
-    })
+      cloudinary_public_id: uploadResult.public_id,
+      cloudinary_version: uploadResult.version,
+      cloudinary_signature: uploadResult.signature
+    }
 
-    await material.save()
-
-    // 填充上传者信息
-    await material.populate('uploadedBy', 'username')
+    const material = await Material.create(materialData)
 
     res.status(201).json({
       success: true,
@@ -187,10 +167,6 @@ router.post('/upload', auth, requireEditor, upload.single('file'), [
 router.get('/:id', async (req, res) => {
   try {
     const material = await Material.findById(req.params.id)
-      .maxTimeMS(60000) // 60秒超时
-      .populate('uploadedBy', 'username')
-      .lean()
-      .maxTimeMS(60000) // 60秒超时
 
     if (!material) {
       return res.status(404).json({
@@ -200,8 +176,7 @@ router.get('/:id', async (req, res) => {
     }
 
     // 增加查看次数
-    await Material.findByIdAndUpdate(req.params.id, { $inc: { viewCount: 1 } })
-      .maxTimeMS(60000) // 60秒超时
+    await material.incrementViewCount()
 
     res.json({
       success: true,
@@ -220,7 +195,6 @@ router.get('/:id', async (req, res) => {
 router.delete('/:id', auth, requireEditor, async (req, res) => {
   try {
     const material = await Material.findById(req.params.id)
-      .maxTimeMS(60000) // 60秒超时
 
     if (!material) {
       return res.status(404).json({
@@ -230,7 +204,7 @@ router.delete('/:id', auth, requireEditor, async (req, res) => {
     }
 
     // 检查权限：只有上传者或管理员可以删除
-    if (material.uploadedBy.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    if (material.uploaded_by !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: '权限不足'
@@ -238,9 +212,9 @@ router.delete('/:id', auth, requireEditor, async (req, res) => {
     }
 
     // 如果有Cloudinary public_id，先删除Cloudinary中的文件
-    if (material.cloudinaryPublicId) {
+    if (material.cloudinary_public_id) {
       try {
-        const deleteResult = await deleteFromCloudinary(material.cloudinaryPublicId)
+        const deleteResult = await deleteFromCloudinary(material.cloudinary_public_id)
         console.log('Cloudinary删除结果:', deleteResult)
       } catch (error) {
         console.error('删除Cloudinary文件失败:', error)
@@ -248,7 +222,7 @@ router.delete('/:id', auth, requireEditor, async (req, res) => {
       }
     }
 
-    await Material.findByIdAndDelete(req.params.id)
+    await material.delete()
 
     res.json({
       success: true,
@@ -280,7 +254,6 @@ router.put('/:id', auth, requireEditor, [
     }
 
     const material = await Material.findById(req.params.id)
-      .maxTimeMS(60000) // 60秒超时
 
     if (!material) {
       return res.status(404).json({
@@ -290,7 +263,7 @@ router.put('/:id', auth, requireEditor, [
     }
 
     // 检查权限
-    if (material.uploadedBy.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    if (material.uploaded_by !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: '权限不足'
@@ -299,15 +272,15 @@ router.put('/:id', auth, requireEditor, [
 
     const { name, description, tags } = req.body
 
-    // 更新字段
-    if (name) material.name = name
-    if (description !== undefined) material.description = description
+    // 构建更新数据
+    const updateData = {}
+    if (name) updateData.name = name
+    if (description !== undefined) updateData.description = description
     if (tags !== undefined) {
-      material.tags = tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : []
+      updateData.tags = tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : []
     }
 
-    await material.save()
-    await material.populate('uploadedBy', 'username')
+    await material.update(updateData)
 
     res.json({
       success: true,
@@ -327,10 +300,6 @@ router.put('/:id', auth, requireEditor, [
 router.get('/:id/download', async (req, res) => {
   try {
     const material = await Material.findById(req.params.id)
-      .maxTimeMS(60000) // 60秒超时
-      .populate('uploadedBy', 'username')
-      .lean()
-      .maxTimeMS(60000) // 60秒超时
 
     if (!material) {
       return res.status(404).json({
@@ -339,22 +308,25 @@ router.get('/:id/download', async (req, res) => {
       })
     }
 
+    // 增加下载次数
+    await material.incrementDownloadCount()
+
     // 返回文件信息和下载链接
     res.json({
       success: true,
       data: {
-        id: material._id,
+        id: material.id,
         name: material.name,
         type: material.type,
         category: material.category,
         url: material.url,
         size: material.size,
-        mimeType: material.mimeType,
+        mimeType: material.mime_type,
         description: material.description,
         tags: material.tags,
-        uploadedBy: material.uploadedBy,
-        createdAt: material.createdAt,
-        updatedAt: material.updatedAt,
+        uploadedBy: material.uploaded_by,
+        createdAt: material.created_at,
+        updatedAt: material.updated_at,
         // 下载链接（直接使用Cloudinary URL）
         downloadUrl: material.url,
         // 如果需要缩略图
@@ -373,10 +345,7 @@ router.get('/:id/download', async (req, res) => {
 // 获取Hero素材
 router.get('/heroes', async (req, res) => {
   try {
-    const heroes = await Material.find({ 
-      category: 'hero', 
-      isPublic: true 
-    }).sort({ createdAt: -1 }).lean()
+    const heroes = await Material.getHeroes()
     
     res.json({
       success: true,

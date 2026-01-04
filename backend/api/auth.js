@@ -1,7 +1,7 @@
 import express from 'express'
 import jwt from 'jsonwebtoken'
 import { body, validationResult } from 'express-validator'
-import User from '../models/User.js'
+import { User } from '../models/User.js'
 import { auth } from '../middleware/auth.js'
 
 const router = express.Router()
@@ -25,11 +25,7 @@ router.post('/login', [
     const { username, password } = req.body
 
     // 查找用户
-    const user = await User.findOne({ 
-      $or: [{ username }, { email: username }],
-      isActive: true
-    })
-      .maxTimeMS(60000) // 60秒超时
+    const user = await User.findByUsernameOrEmail(username)
 
     if (!user) {
       return res.status(401).json({
@@ -48,12 +44,11 @@ router.post('/login', [
     }
 
     // 更新最后登录时间
-    user.lastLogin = new Date()
-    await user.save()
+    await user.updateLastLogin()
 
     // 生成JWT令牌
     const token = jwt.sign(
-      { userId: user._id },
+      { userId: user.id },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     )
@@ -64,7 +59,7 @@ router.post('/login', [
       data: {
         token,
         user: {
-          id: user._id,
+          id: user.id,
           username: user.username,
           email: user.email,
           role: user.role,
@@ -101,7 +96,7 @@ router.get('/me', auth, async (req, res) => {
 router.post('/refresh', auth, async (req, res) => {
   try {
     const token = jwt.sign(
-      { userId: req.user._id },
+      { userId: req.user.id },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     )

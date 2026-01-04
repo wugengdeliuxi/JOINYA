@@ -252,6 +252,7 @@ const fetchDynamicMenus = async () => {
 const fetchHeroMaterials = async () => {
   try {
     const response = await heroesApi.getHeroes()
+    console.log(response, 'response')
     if (response.success && response.data.length > 0) {
       heroMaterials.value = response.data
       // 使用第一个Hero作为当前显示的Hero
