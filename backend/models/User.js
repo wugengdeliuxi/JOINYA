@@ -143,17 +143,38 @@ export class User {
   // 更新最后登录时间
   async updateLastLogin() {
     try {
+      // 检查 last_login 字段是否存在，如果不存在则跳过更新
       const { data, error } = await supabase
         .from('users')
-        .update({ last_login: new Date().toISOString() })
+        .update({ 
+          updated_at: new Date().toISOString(),
+          // last_login 字段可能不存在，如果存在则更新
+          ...(this.last_login !== undefined && { last_login: new Date().toISOString() })
+        })
         .eq('id', this.id)
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        // 如果是因为字段不存在而失败，只更新 updated_at
+        if (error.message.includes('last_login')) {
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('users')
+            .update({ updated_at: new Date().toISOString() })
+            .eq('id', this.id)
+            .select()
+            .single()
+          
+          if (fallbackError) throw fallbackError
+          return this
+        }
+        throw error
+      }
       return this
     } catch (error) {
-      throw new Error(`更新最后登录时间失败: ${error.message}`)
+      // 如果更新失败，记录错误但不阻止登录
+      console.warn('更新最后登录时间失败（不影响登录）:', error.message)
+      return this
     }
   }
 
