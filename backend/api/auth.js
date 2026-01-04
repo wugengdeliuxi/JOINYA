@@ -24,10 +24,25 @@ router.post('/login', [
 
     const { username, password } = req.body
 
+    console.log('Login attempt:', { username, passwordLength: password?.length })
+
     // 查找用户
-    const user = await User.findByUsernameOrEmail(username)
+    let user
+    try {
+      user = await User.findByUsernameOrEmail(username)
+      console.log('User lookup result:', user ? `Found user: ${user.username}` : 'User not found')
+    } catch (error) {
+      console.error('User lookup error:', error.message)
+      console.error('Error details:', error)
+      return res.status(500).json({
+        success: false,
+        message: '服务器错误：查找用户失败',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      })
+    }
 
     if (!user) {
+      console.log('Login failed: User not found')
       return res.status(401).json({
         success: false,
         message: '用户名或密码错误'
@@ -35,8 +50,21 @@ router.post('/login', [
     }
 
     // 验证密码
-    const isPasswordValid = await user.comparePassword(password)
+    let isPasswordValid
+    try {
+      isPasswordValid = await user.comparePassword(password)
+      console.log('Password validation result:', isPasswordValid)
+    } catch (error) {
+      console.error('Password validation error:', error.message)
+      return res.status(500).json({
+        success: false,
+        message: '服务器错误：密码验证失败',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      })
+    }
+
     if (!isPasswordValid) {
+      console.log('Login failed: Invalid password')
       return res.status(401).json({
         success: false,
         message: '用户名或密码错误'
