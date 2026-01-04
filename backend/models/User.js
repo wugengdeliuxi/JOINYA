@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase.js'
+import { supabase, supabaseAdmin } from '../lib/supabase.js'
 import bcrypt from 'bcryptjs'
 
 export class User {
@@ -30,9 +30,11 @@ export class User {
   }
 
   // 根据用户名或邮箱查找用户
+  // 注意：登录时需要使用服务角色客户端，因为 RLS 策略会阻止匿名用户查询
   static async findByUsernameOrEmail(identifier) {
     try {
-      const { data, error } = await supabase
+      // 使用服务角色客户端绕过 RLS，用于登录验证
+      const { data, error } = await supabaseAdmin
         .from('users')
         .select('*')
         .or(`username.eq.${identifier},email.eq.${identifier}`)
