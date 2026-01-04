@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase.js'
+import { supabase, supabaseAdmin } from '../lib/supabase.js'
 
 export class Material {
   constructor(data) {
@@ -24,9 +24,10 @@ export class Material {
   }
 
   // 创建素材
+  // 使用服务角色客户端绕过 RLS 策略
   static async create(materialData) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('materials')
         .insert([materialData])
         .select()

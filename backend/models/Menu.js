@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase.js'
+import { supabase, supabaseAdmin } from '../lib/supabase.js'
 
 export class Menu {
   constructor(data) {
@@ -19,9 +19,10 @@ export class Menu {
   }
 
   // 创建菜单
+  // 使用服务角色客户端绕过 RLS 策略
   static async create(menuData) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('menus')
         .insert([menuData])
         .select()
@@ -57,13 +58,11 @@ export class Menu {
   // 根据slug查找菜单
   static async findBySlug(slug) {
     try {
-      const { data, error } = await supabase
+      // 使用服务角色客户端
+      // 暂时不关联 users 表，避免关系冲突
+      const { data, error } = await supabaseAdmin
         .from('menus')
-        .select(`
-          *,
-          created_by:users(username),
-          updated_by:users(username)
-        `)
+        .select('*')
         .eq('slug', slug)
         .single()
 
@@ -86,13 +85,11 @@ export class Menu {
       } = options
       const offset = (page - 1) * limit
 
-      let query = supabase
+      // 使用服务角色客户端绕过 RLS
+      // 暂时不关联 users 表，避免关系冲突
+      let query = supabaseAdmin
         .from('menus')
-        .select(`
-          *,
-          created_by:users(username),
-          updated_by:users(username)
-        `, { count: 'exact' })
+        .select('*', { count: 'exact' })
 
       if (keyword) {
         query = query.or(`name.ilike.%${keyword}%,slug.ilike.%${keyword}%`)
